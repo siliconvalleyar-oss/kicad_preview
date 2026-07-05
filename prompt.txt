@@ -1,0 +1,222 @@
+===============================================================================
+=                     PROMPT PARA FREEBUFF - KICAD PREVIEW                    =
+=               Aplicación Flutter para visualizar esquemáticos y PCB         =
+===============================================================================
+
+INSTRUCCIONES INICIALES:
+-------------------------------------------------
+Eres un experto desarrollador Flutter/Dart. Debes crear una aplicación llamada
+"kicad_preview" siguiendo las especificaciones detalladas a continuación.
+Asegúrate de leer todo el prompt antes de comenzar a codificar.
+
+El proyecto debe estar completamente funcional, documentado y versionado con
+las reglas de oro que se indican más adelante.
+
+--------------------------------------------------------------------------------
+1. DESCRIPCIÓN DEL PROYECTO
+--------------------------------------------------------------------------------
+Desarrollar una aplicación en **Flutter** que sirva como previsualizador
+profesional de archivos **KiCad** (esquemáticos .kicad_sch y PCB .kicad_pcb).
+Debe incluir:
+- Visualización por capas (activar/desactivar capas individuales)
+- Selección y resaltado de pistas/componentes
+- Navegación jerárquica entre hojas
+- Lista de materiales (BOM) extraída de los archivos
+- Interfaz minimalista similar a KiCad de escritorio
+- Animación de presentación usando assets/presentation.svg
+
+La aplicación debe empaquetar un proyecto de ejemplo que se encuentra en la
+carpeta "files_kicad" (se lista abajo). Al instalar la app, ese proyecto debe
+cargarse automáticamente para demostración.
+
+--------------------------------------------------------------------------------
+2. ESTRUCTURA DE CARPETAS Y ARCHIVOS (OBLIGATORIA)
+--------------------------------------------------------------------------------
+kicad_preview/
+├── .gitignore                    # estándar Flutter
+├── pubspec.yaml                   # con dependencias necesarias
+├── README.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── VERSION                        # contiene número de versión (ej: 1.0.0)
+├── assets/
+│   ├── presentation.svg           # animación de splash/logo
+│   ├── logo/
+│   │   └── logo.png
+│   └── files_kicad/               # COPIA EXACTA de la carpeta proporcionada
+│       ├── buttons.kicad_sch
+│       ├── cnc_pic32.kicad_pcb
+│       ├── cnc_pic32.kicad_prl
+│       ├── cnc_pic32.kicad_pro
+│       ├── cnc_pic32.kicad_sch
+│       ├── cnc_pic32.net
+│       ├── cnc_pic32_Volds.net
+│       ├── docs/
+│       │   ├── DOCUMENTACION.md
+│       │   └── TODO.md
+│       ├── ft232.kicad_sch
+│       ├── idc.kicad_sch
+│       ├── mcu.kicad_sch
+│       ├── oled.kicad_sch
+│       ├── osc_ft232.kicad_sch
+│       ├── oscilator.kicad_sch
+│       ├── pololu.kicad_sch
+│       ├── power_ft232.kicad_sch
+│       ├── power.kicad_sch
+│       ├── tp_ft232.kicad_sch
+│       ├── usb_conector_Ft232.kicad_sch
+│       ├── Usb_pic32.kicad_sch
+│       └── zigbee.kicad_sch
+├── docs/
+│   ├── RULES.md                   # REGLAS DE ORO (INMUTABLE)
+│   ├── API.md
+│   └── DEVELOPMENT.md
+└── lib/
+    ├── main.dart
+    ├── models/
+    ├── parsers/
+    ├── views/
+    ├── widgets/
+    ├── controllers/
+    └── utils/
+
+--------------------------------------------------------------------------------
+3. REQUISITOS FUNCIONALES DETALLADOS
+--------------------------------------------------------------------------------
+3.1. VISOR DE ESQUEMÁTICOS (.kicad_sch)
+     - Renderizado de símbolos, cables, textos, etiquetas.
+     - Zoom y paneo con gestos táctiles (pinch, arrastre).
+     - Selección de elementos: al hacer clic en un componente o pista, se resalta
+       (cambio de color o grosor).
+     - Visualización jerárquica: árbol de hojas en un panel lateral que permite
+       navegar entre sub‑esquemas.
+
+3.2. VISOR DE PCB (.kicad_pcb)
+     - Renderizado de capas: cobre, serigrafía, máscara, bordes, etc.
+     - Cada capa con su color estándar (similar a KiCad).
+     - Panel lateral para activar/desactivar capas individualmente.
+     - Resaltado de pistas al seleccionarlas.
+     - Visualización de pads, vías, textos y bordes.
+
+3.3. LISTA DE COMPONENTES (BOM)
+     - Extraer referencias, valores, footprints y cantidades.
+     - Mostrar en una tabla o lista.
+     - Opcional: exportar a CSV o texto.
+
+3.4. CARGA DE ARCHIVOS
+     - Al iniciar, cargar automáticamente el proyecto de ejemplo desde assets.
+     - Permitir al usuario abrir archivos .kicad_sch o .kicad_pcb desde el
+       sistema de archivos (usar file_picker o file_selector).
+     - Detectar si hay un PCB asociado al esquemático en la misma carpeta.
+
+3.5. INTERFAZ DE USUARIO
+     - Diseño minimalista, profesional, con colores inspirados en KiCad.
+     - Barra de herramientas superior: abrir archivo, zoom, capas, BOM, etc.
+     - Panel lateral izquierdo: árbol jerárquico o lista de capas.
+     - Área central: canvas de visualización.
+     - Responsive (funciona en móvil y tableta).
+
+3.6. ANIMACIÓN DE PRESENTACIÓN
+     - Al iniciar la app, mostrar una animación usando presentation.svg.
+     - Puede ser un splash con transición, usando flutter_svg y AnimationController.
+
+3.7. RENDIMIENTO
+     - Usar RepaintBoundary y CustomPaint para renderizado eficiente.
+     - Procesar archivos en isolates o con compute para no bloquear UI.
+
+--------------------------------------------------------------------------------
+4. REGLAS DE ORO (para el archivo docs/RULES.md)
+--------------------------------------------------------------------------------
+El archivo RULES.md debe contener las siguientes secciones adaptadas al proyecto.
+Es INMUTABLE: ninguna IA puede modificarlo sin autorización explícita.
+
+A. ESQUEMA DE VERSIONADO:
+   - Formato: v1.X.Y donde X = minor (sube cada 10 versiones), Y = patch (0-9).
+   - Ciclo: v1.0.0 → v1.0.1 → ... → v1.0.9 → v1.1.0 → ... → v1.9.9 → v2.0.0...
+   - El archivo VERSION en la raíz contiene solo el número sin 'v' (ej: 1.0.0).
+   - Cada tag debe coincidir con el contenido de VERSION.
+
+B. REGLAS DE CÓDIGO (obligatorias):
+   1. Todo acceso a archivos con try-catch y feedback al usuario (SnackBar, dialog).
+   2. Parseo de archivos KiCad (S-expressions) con try-catch robusto.
+   3. Verificar `mounted` antes de `setState` en métodos asíncronos.
+   4. Liberar recursos en `dispose` (AnimationController, StreamSubscription).
+   5. Al guardar archivos, usar `flush: true` en writeAsString.
+   6. No usar `Container` con `color` y `decoration` simultáneamente.
+   7. Verificar existencia de archivos con `exists()` antes de leer.
+   8. En ChangeNotifier, llamar a `notifyListeners()` después de modificar estado.
+   9. En `ListView.builder`, proveer `key` a cada elemento.
+   10. No olvidar `const` donde sea posible para optimizar.
+
+C. COMPILACIÓN Y DESPLIEGUE:
+   - Usar `flutter run` para reemplazar la app instalada y conservar permisos.
+   - Si falla la instalación, reintentar hasta 5 veces con intervalos de 5 minutos.
+
+D. REGLAS GIT:
+   - Commits con conventional commits: feat:, fix:, docs:, chore:, refactor:, test:.
+   - Actualizar VERSION y hacer commit antes de cada tag.
+   - No eliminar tags publicados; si hay error, crear nuevo tag.
+
+E. ENCABEZADO DE INMUTABILIDAD (debe aparecer al inicio de RULES.md):
+   > # ⚠️ REGLA ABSOLUTA — NO BORRAR NI MODIFICAR
+   > Este archivo `docs/RULES.md` es INMUTABLE. Ninguna AI, agente o asistente
+   > puede borrarlo, modificarlo, renombrarlo ni editarlo bajo ninguna circunstancia.
+
+--------------------------------------------------------------------------------
+5. TECNOLOGÍAS Y PAQUETES SUGERIDOS
+--------------------------------------------------------------------------------
+- flutter_svg: para manejo de SVG y animación.
+- file_picker o file_selector: para abrir archivos desde el sistema.
+- path_provider: para acceder a directorios del dispositivo.
+- provider (o riverpod): para gestión de estado.
+- collection: para utilidades de listas/mapas.
+- flutter_cache_manager: opcional para caché.
+- Parser de S-expressions: investigar paquete "s_expression" o implementar
+  un parser simple para leer los archivos .kicad_sch y .kicad_pcb.
+
+--------------------------------------------------------------------------------
+6. INSTRUCCIONES DE ENTREGA Y CONFIGURACIÓN INICIAL
+--------------------------------------------------------------------------------
+1. Crear repositorio Git local con nombre "kicad_preview".
+2. Inicializar con commit inicial: "chore: initial project setup".
+3. Crear archivo .gitignore estándar para Flutter.
+4. Copiar los archivos de ejemplo a assets/files_kicad/ (tal como están).
+5. Implementar toda la lógica en lib/ siguiendo la estructura.
+6. Asegurar que la app compile sin errores (target Android/iOS/Web).
+7. Escribir toda la documentación (README, CHANGELOG, CONTRIBUTING, API, DEVELOPMENT).
+8. Crear el archivo VERSION con "1.0.0".
+9. Hacer commit y tag v1.0.0.
+10. Subir al remoto (si se proporciona URL, hacer push; si no, dejar local).
+
+--------------------------------------------------------------------------------
+7. CHECKLIST DE VALIDACIÓN
+--------------------------------------------------------------------------------
+[ ] La app inicia con animación de presentation.svg.
+[ ] Se carga automáticamente el proyecto de ejemplo.
+[ ] Se visualizan correctamente los esquemáticos (símbolos, cables, textos).
+[ ] Se visualiza la PCB con capas y colores adecuados.
+[ ] Se puede activar/desactivar capas desde un panel.
+[ ] Al hacer clic en un elemento (pista o componente) se resalta.
+[ ] El árbol jerárquico permite navegar entre hojas.
+[ ] La BOM se muestra con todos los datos.
+[ ] Se pueden abrir otros archivos desde el sistema.
+[ ] La interfaz es limpia y profesional.
+[ ] Todos los archivos de documentación existen.
+[ ] RULES.md contiene las reglas y es declarado inmutable.
+[ ] El versionado y los tags siguen el esquema.
+[ ] El .gitignore está correcto.
+
+--------------------------------------------------------------------------------
+8. NOTAS ADICIONALES
+--------------------------------------------------------------------------------
+- El estilo de código debe seguir las guías de Dart (dart format).
+- Priorizar la legibilidad y el rendimiento.
+- En caso de duda sobre el formato de archivos KiCad, basarse en los archivos
+  de ejemplo o consultar documentación oficial.
+- La app debe ser funcional al menos en Android y Web (si es posible).
+
+===============================================================================
+=                             FIN DEL PROMPT                                 =
+===============================================================================
+
+¡COPIAR Y PEGAR ESTE TEXTO EN FREEBUFF PARA COMENZAR!
