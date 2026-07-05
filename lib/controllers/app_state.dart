@@ -18,6 +18,8 @@ class AppState extends ChangeNotifier {
   String? _selectedElementId;
   bool _showHierarchy = true;
   bool _showLayers = true;
+  bool _showComponentNames = true;
+  bool _showComponentValues = true;
 
   // Schematic view state
   Offset _schematicOffset = Offset.zero;
@@ -37,6 +39,8 @@ class AppState extends ChangeNotifier {
   String? get selectedElementId => _selectedElementId;
   bool get showHierarchy => _showHierarchy;
   bool get showLayers => _showLayers;
+  bool get showComponentNames => _showComponentNames;
+  bool get showComponentValues => _showComponentValues;
   Offset get schematicOffset => _schematicOffset;
   double get schematicScale => _schematicScale;
   Offset get pcbOffset => _pcbOffset;
@@ -108,6 +112,16 @@ class AppState extends ChangeNotifier {
   /// Toggle layers panel.
   void toggleLayers() {
     _showLayers = !_showLayers;
+    notifyListeners();
+  }
+
+  void toggleComponentNames() {
+    _showComponentNames = !_showComponentNames;
+    notifyListeners();
+  }
+
+  void toggleComponentValues() {
+    _showComponentValues = !_showComponentValues;
     notifyListeners();
   }
 

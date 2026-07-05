@@ -30,32 +30,30 @@ class _SchematicViewState extends State<SchematicView> {
     double minX = double.infinity, minY = double.infinity;
     double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
 
+    void updateBounds(double x, double y) {
+      if (x < minX) minX = x; if (y < minY) minY = y;
+      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+    }
+
     for (final wire in widget.schematic.wires) {
       for (final p in wire.points) {
-        final x = p.x * 4;
-        final y = p.y * 4;
-        if (x < minX) minX = x; if (y < minY) minY = y;
-        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+        updateBounds(p.x * 4, p.y * 4);
       }
     }
     for (final junction in widget.schematic.junctions) {
-      final x = junction.position.x * 4;
-      final y = junction.position.y * 4;
-      if (x < minX) minX = x; if (y < minY) minY = y;
-      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      updateBounds(junction.position.x * 4, junction.position.y * 4);
     }
     for (final sheet in widget.schematic.sheets) {
-      final x = (sheet.x + sheet.width) * 4;
-      final y = (sheet.y + sheet.height) * 4;
-      if (sheet.x * 4 < minX) minX = sheet.x * 4;
-      if (sheet.y * 4 < minY) minY = sheet.y * 4;
-      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      updateBounds(sheet.x * 4, sheet.y * 4);
+      updateBounds((sheet.x + sheet.width) * 4, (sheet.y + sheet.height) * 4);
     }
     for (final text in widget.schematic.texts) {
-      final x = text.position.x * 4;
-      final y = text.position.y * 4;
-      if (x < minX) minX = x; if (y < minY) minY = y;
-      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      updateBounds(text.position.x * 4, text.position.y * 4);
+    }
+    for (final el in widget.schematic.elements) {
+      if (el.type == SchematicElementType.symbol && el.points.isNotEmpty) {
+        updateBounds(el.points[0].x * 4, el.points[0].y * 4);
+      }
     }
 
     if (minX == double.infinity) return;
@@ -112,17 +110,19 @@ class _SchematicViewState extends State<SchematicView> {
             // Find closest element
             _selectNearestElement(tapX, tapY);
           },
-          child: RepaintBoundary(
-            child: CustomPaint(
-              painter: SchematicPainter(
-                schematic: widget.schematic,
-                selectedElementId:
-                    context.watch<AppState>().selectedElementId,
-                scale: _transformController.value.getMaxScaleOnAxis(),
-              ),
-              size: const Size(2000, 2000),
-            ),
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: SchematicPainter(
+            schematic: widget.schematic,
+            selectedElementId:
+                context.watch<AppState>().selectedElementId,
+            scale: _transformController.value.getMaxScaleOnAxis(),
+            showNames: context.watch<AppState>().showComponentNames,
+            showValues: context.watch<AppState>().showComponentValues,
           ),
+          size: const Size(2000, 2000),
+        ),
+      ),
         ),
       ),
     );
@@ -151,16 +151,19 @@ class SchematicPainter extends CustomPainter {
   final Schematic schematic;
   final String? selectedElementId;
   final double scale;
+  final bool showNames;
+  final bool showValues;
 
   SchematicPainter({
     required this.schematic,
     this.selectedElementId,
     this.scale = 1.0,
+    this.showNames = true,
+    this.showValues = true,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw grid
     _drawGrid(canvas, size);
 
     // Draw wires
@@ -300,6 +303,141 @@ class SchematicPainter extends CustomPainter {
         }
       }
     }
+
+    // Draw symbols (component bodies + text)
+    for (final element in schematic.elements) {
+      if (element.type != SchematicElementType.symbol) continue;
+      if (element.points.isEmpty) continue;
+
+      final pos = element.points[0];
+      final cx = pos.x * 4;
+      final cy = pos.y * 4;
+      final libId = element.properties['lib_id'] ?? '';
+      final isSelected = element.uuid == selectedElementId;
+
+      // Draw body
+      final bodyPaint = Paint()
+        ..color = isSelected
+            ? const Color(0xFF6C5CE7)
+            : const Color(0xFF8E44AD)
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke;
+
+      final bodyFill = Paint()
+        ..color = const Color(0xFF2D2D44)
+        ..style = PaintingStyle.fill;
+
+      if (libId.startsWith('power:')) {
+        // Power symbol: small circle or triangle
+        _drawPowerSymbol(canvas, cx, cy, libId, bodyPaint);
+      } else if (libId.contains(':R_') || libId == 'Device:R') {
+        // Resistor: rectangle
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(cx, cy), width: 20, height: 10),
+            const Radius.circular(1),
+          ),
+          bodyFill,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(cx, cy), width: 20, height: 10),
+            const Radius.circular(1),
+          ),
+          bodyPaint,
+        );
+      } else if (libId.contains(':C_') || libId == 'Device:C') {
+        // Capacitor: two parallel lines
+        canvas.drawLine(Offset(cx - 4, cy - 6), Offset(cx - 4, cy + 6), bodyPaint);
+        canvas.drawLine(Offset(cx + 4, cy - 6), Offset(cx + 4, cy + 6), bodyPaint);
+      } else if (libId.contains(':D_') || libId == 'Device:D') {
+        // Diode: triangle + line
+        final path = Path()
+          ..moveTo(cx, cy - 8)
+          ..lineTo(cx + 8, cy)
+          ..lineTo(cx, cy + 8)
+          ..close();
+        canvas.drawPath(path, bodyPaint);
+        canvas.drawLine(Offset(cx - 4, cy - 8), Offset(cx - 4, cy + 8), bodyPaint);
+      } else if (libId.contains(':Q_') || libId.contains('Transistor')) {
+        // Transistor: circle
+        canvas.drawCircle(Offset(cx, cy), 10, bodyFill);
+        canvas.drawCircle(Offset(cx, cy), 10, bodyPaint);
+      } else {
+        // Default: rectangle
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(cx, cy), width: 16, height: 14),
+            const Radius.circular(2),
+          ),
+          bodyFill,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(cx, cy), width: 16, height: 14),
+            const Radius.circular(2),
+          ),
+          bodyPaint,
+        );
+      }
+
+      // Draw reference name (e.g. R1, U1)
+      if (showNames && element.text != null) {
+        final refX = double.tryParse(element.properties['ref_x'] ?? '${pos.x}') ?? pos.x;
+        final refY = double.tryParse(element.properties['ref_y'] ?? '${pos.y - 1}') ?? pos.y - 1;
+        final namePainter = TextPainter(
+          text: TextSpan(
+            text: element.text,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFF6C5CE7) : Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        namePainter.layout();
+        namePainter.paint(canvas, Offset(refX * 4, refY * 4));
+      }
+
+      // Draw value (e.g. 10k, 100nF)
+      if (showValues) {
+        final value = element.properties['Value'] ?? '';
+        if (value.isNotEmpty) {
+          final valX = double.tryParse(element.properties['val_x'] ?? '${pos.x}') ?? pos.x;
+          final valY = double.tryParse(element.properties['val_y'] ?? '${pos.y + 1}') ?? pos.y + 1;
+          final valPainter = TextPainter(
+            text: TextSpan(
+              text: value,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF6C5CE7) : const Color(0xFFF39C12),
+                fontSize: 7,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          valPainter.layout();
+          valPainter.paint(canvas, Offset(valX * 4, valY * 4));
+        }
+      }
+    }
+  }
+
+  void _drawPowerSymbol(Canvas canvas, double cx, double cy, String libId, Paint paint) {
+    final isGround = libId.contains('GND') || libId.contains('gnd');
+    if (isGround) {
+      final path = Path()
+        ..moveTo(cx - 6, cy + 4)
+        ..lineTo(cx + 6, cy + 4)
+        ..moveTo(cx, cy + 4)
+        ..lineTo(cx, cy - 4)
+        ..moveTo(cx - 3, cy + 1)
+        ..lineTo(cx + 3, cy + 1);
+      canvas.drawPath(path, paint);
+    } else {
+      canvas.drawCircle(Offset(cx, cy), 4, paint..style = PaintingStyle.stroke);
+      canvas.drawLine(Offset(cx, cy - 4), Offset(cx, cy + 4), paint);
+    }
   }
 
   void _drawGrid(Canvas canvas, Size size) {
@@ -319,6 +457,8 @@ class SchematicPainter extends CustomPainter {
   @override
   bool shouldRepaint(SchematicPainter oldDelegate) {
     return oldDelegate.schematic != schematic ||
-        oldDelegate.selectedElementId != selectedElementId;
+        oldDelegate.selectedElementId != selectedElementId ||
+        oldDelegate.showNames != showNames ||
+        oldDelegate.showValues != showValues;
   }
 }

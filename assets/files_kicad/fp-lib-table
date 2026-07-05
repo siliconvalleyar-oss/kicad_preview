@@ -1,0 +1,6 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "Library") (type "KiCad") (uri "/home/optimus/Documentos/kicad/libary/Library.pretty") (options "") (descr ""))
+	(lib (name "Library2") (type "KiCad") (uri "/home/optimus/Documentos/kicad/libary/Library2.pretty") (options "") (descr ""))
+	(lib (name "Library") (type "KiCad") (uri "${KIPRJMOD}/footprint_huellas/Library.pretty") (options "") (descr ""))
+)

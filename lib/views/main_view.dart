@@ -17,7 +17,12 @@ import 'dart:convert' show utf8;
 
 /// Available KiCad files bundled in assets.
 const List<Map<String, String>> _kicadFiles = [
-  {'name': 'cnc_pic32', 'sch': 'cnc_pic32.kicad_sch', 'pcb': 'cnc_pic32.kicad_pcb'},
+  {'name': 'project_pi (Main)', 'sch': 'project_pi.kicad_sch', 'pcb': ''},
+  {'name': 'POWER (Sub-sheet)', 'sch': 'POWER.kicad_sch', 'pcb': ''},
+  {'name': 'BUTONS (Sub-sheet)', 'sch': 'BUTONS.kicad_sch', 'pcb': ''},
+  {'name': 'display (Sub-sheet)', 'sch': 'display.kicad_sch', 'pcb': ''},
+  {'name': 'LIPO_CHARGER (Sub-sheet)', 'sch': 'LIPO_CHARGER.kicad_sch', 'pcb': ''},
+  {'name': 'microSD (Sub-sheet)', 'sch': 'microSD.kicad_sch', 'pcb': ''},
 ];
 
 class MainView extends StatefulWidget {
@@ -66,17 +71,9 @@ class _MainViewState extends State<MainView> {
     final appState = context.read<AppState>();
     try {
       final schContent = await rootBundle.loadString(
-        'assets/files_kicad/cnc_pic32.kicad_sch',
+        'assets/files_kicad/project_pi.kicad_sch',
       );
-      await appState.loadSchematic(schContent, fileName: 'cnc_pic32.kicad_sch');
-
-      try {
-        final pcbContent = await rootBundle.loadString(
-          'assets/files_kicad/cnc_pic32.kicad_pcb',
-        );
-        await appState.loadPCB(pcbContent, fileName: 'cnc_pic32.kicad_pcb');
-      } catch (_) {
-      }
+      await appState.loadSchematic(schContent, fileName: 'project_pi.kicad_sch');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -241,6 +238,10 @@ class _MainViewState extends State<MainView> {
                     appState.toggleLayers();
                     if (appState.showLayers) _startPanelTimer();
                   },
+                  onToggleNames: () => appState.toggleComponentNames(),
+                  onToggleValues: () => appState.toggleComponentValues(),
+                  showNames: appState.showComponentNames,
+                  showValues: appState.showComponentValues,
                 ),
                 Expanded(
                   child: Row(
@@ -428,7 +429,7 @@ class _MainViewState extends State<MainView> {
           ],
           const Spacer(),
           Text(
-            'KiCad Preview v1.0.5',
+            'KiCad Preview v1.0.6',
             style: TextStyle(
               color: Colors.white.withAlpha(77),
               fontSize: 11,

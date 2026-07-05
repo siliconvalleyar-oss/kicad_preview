@@ -194,23 +194,63 @@ class SchematicParser {
       }
     }
 
-    // Extract BOM info from symbol instances
+    // Parse symbol instances (components)
     for (final symbol in SExprParser.findAll(root, 'symbol')) {
+      final at = SExprParser.findFirst(symbol, 'at');
+      double sx = 0, sy = 0, srot = 0;
+      if (at != null && at.length >= 3) {
+        sx = double.tryParse(at[1].toString()) ?? 0;
+        sy = double.tryParse(at[2].toString()) ?? 0;
+        srot = at.length > 3 ? double.tryParse(at[3].toString()) ?? 0 : 0;
+      }
+      final libId = SExprParser.getStringValue(symbol, 'lib_id') ?? '';
+      final uuid = SExprParser.getStringValue(symbol, 'uuid');
+
       String reference = '';
       String value = '';
+      Point? refPos, valuePos;
       for (final prop in SExprParser.findAll(symbol, 'property')) {
         if (prop.length >= 3) {
           final name = prop[1].toString();
           final valueStr = prop[2].toString();
-          if (name == 'Reference') reference = valueStr;
-          if (name == 'Value') value = valueStr;
+          if (name == 'Reference') {
+            reference = valueStr;
+            final pat = SExprParser.findFirst(prop, 'at');
+            if (pat != null && pat.length >= 3) {
+              refPos = Point(
+                double.tryParse(pat[1].toString()) ?? 0,
+                double.tryParse(pat[2].toString()) ?? 0,
+              );
+            }
+          }
+          if (name == 'Value') {
+            value = valueStr;
+            final pat = SExprParser.findFirst(prop, 'at');
+            if (pat != null && pat.length >= 3) {
+              valuePos = Point(
+                double.tryParse(pat[1].toString()) ?? 0,
+                double.tryParse(pat[2].toString()) ?? 0,
+              );
+            }
+          }
         }
       }
       if (reference.isNotEmpty) {
         elements.add(SchematicElement(
           type: SchematicElementType.symbol,
-          text: '$reference ($value)',
-          properties: {'Reference': reference, 'Value': value},
+          points: [Point(sx, sy)],
+          text: reference,
+          textSize: 1.27,
+          uuid: uuid,
+          properties: {
+            'Reference': reference,
+            'Value': value,
+            'lib_id': libId,
+            'ref_x': '${refPos?.x ?? sx}',
+            'ref_y': '${refPos?.y ?? sy - 2}',
+            'val_x': '${valuePos?.x ?? sx}',
+            'val_y': '${valuePos?.y ?? sy + 2}',
+          },
         ));
       }
     }

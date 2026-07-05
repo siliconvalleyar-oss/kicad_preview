@@ -1,0 +1,150 @@
+(kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid 787baf38-3f0d-4343-8d8d-fd5be619bbb1)
+
+  (paper "A4")
+
+  (lib_symbols
+  )
+
+
+  (sheet (at 124.46 58.42) (size 34.29 40.64) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid 043d7997-457e-4619-a5b3-825bed78c0a6)
+    (property "Sheetname" "RPI" (at 124.46 57.7084 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "Raspberry.kicad_sch" (at 124.46 99.6446 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "3"))
+      )
+    )
+  )
+
+  (sheet (at 163.83 58.42) (size 33.02 40.64) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid 571608b7-a888-4f07-82b0-d01fa7da6eb7)
+    (property "Sheetname" "ANALOGS_DIGITAL" (at 163.83 57.7084 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "ANALOGS_DIGITAL.kicad_sch" (at 163.83 99.6446 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "4"))
+      )
+    )
+  )
+
+  (sheet (at 138.43 104.14) (size 45.72 30.48) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid b9fd0ca8-f7e7-4588-ad19-ad837ba6f041)
+    (property "Sheetname" "sound" (at 138.43 103.4284 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "sound.kicad_sch" (at 138.43 135.2046 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "19"))
+      )
+    )
+  )
+
+  (sheet (at 85.09 58.42) (size 35.56 40.64) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid be80949c-27d0-42c7-952c-f1fefb988b3e)
+    (property "Sheetname" "display" (at 85.09 57.7084 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "display.kicad_sch" (at 85.09 99.6446 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "2"))
+      )
+    )
+  )
+
+  (sheet (at 194.31 107.95) (size 46.99 31.75) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid c3f28c04-6cfe-4fd1-ae47-3dcf6f96ca7f)
+    (property "Sheetname" "FT232" (at 194.31 107.2384 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "FT232BM.kicad_sch" (at 194.31 140.2846 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "8"))
+      )
+    )
+  )
+
+  (sheet (at 163.83 26.67) (size 67.31 25.4) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid ca62a58c-74c2-480c-aa56-a79a32b0b002)
+    (property "Sheetname" "BUTTONS" (at 163.83 25.9584 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "BUTONS.kicad_sch" (at 163.83 52.6546 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "6"))
+      )
+    )
+  )
+
+  (sheet (at 85.09 104.14) (size 48.26 30.48) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid dd14cf3d-4389-4481-a76a-0ee1e1deddd9)
+    (property "Sheetname" "ZIGBEE" (at 85.09 103.4284 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "ZIGBEE.kicad_sch" (at 85.09 135.2046 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "7"))
+      )
+    )
+  )
+
+  (sheet (at 85.09 26.67) (size 73.66 25.4) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid f2931b9b-6fcc-4199-91d8-d06fd17cb974)
+    (property "Sheetname" "POWER" (at 85.09 25.9584 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "POWER.kicad_sch" (at 85.09 52.6546 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1" (page "5"))
+      )
+    )
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+)

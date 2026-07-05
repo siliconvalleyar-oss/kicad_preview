@@ -1,0 +1,27 @@
+(kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid ea4170e4-a2d3-4bb6-97d5-4f3e10e32653)
+
+  (paper "A4")
+
+  (lib_symbols
+  )
+
+
+  (sheet (at 133.35 85.09) (size 27.94 24.13) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid e4c0dddf-96da-4175-9d41-af102b3efa2a)
+    (property "Sheetname" "ad9833" (at 133.35 84.3784 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "ad9833.kicad_sch" (at 133.35 109.8046 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (instances
+      (project "project_pi"
+        (path "/787baf38-3f0d-4343-8d8d-fd5be619bbb1/571608b7-a888-4f07-82b0-d01fa7da6eb7" (page "26"))
+      )
+    )
+  )
+)

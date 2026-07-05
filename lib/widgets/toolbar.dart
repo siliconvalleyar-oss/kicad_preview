@@ -7,6 +7,10 @@ class AppToolbar extends StatelessWidget {
   final ValueChanged<String> onViewChanged;
   final VoidCallback onToggleHierarchy;
   final VoidCallback onToggleLayers;
+  final VoidCallback onToggleNames;
+  final VoidCallback onToggleValues;
+  final bool showNames;
+  final bool showValues;
 
   const AppToolbar({
     super.key,
@@ -16,6 +20,10 @@ class AppToolbar extends StatelessWidget {
     required this.onViewChanged,
     required this.onToggleHierarchy,
     required this.onToggleLayers,
+    required this.onToggleNames,
+    required this.onToggleValues,
+    required this.showNames,
+    required this.showValues,
   });
 
   @override
@@ -83,6 +91,24 @@ class AppToolbar extends StatelessWidget {
             label: 'Layers',
             onPressed: onToggleLayers,
           ),
+          if (currentView == 'schematic') ...[
+            const SizedBox(width: 8),
+            _buildSeparator(),
+            const SizedBox(width: 8),
+            _ToggleButton(
+              icon: Icons.text_fields,
+              label: 'Names',
+              isActive: showNames,
+              onPressed: onToggleNames,
+            ),
+            const SizedBox(width: 4),
+            _ToggleButton(
+              icon: Icons.numbers,
+              label: 'Values',
+              isActive: showValues,
+              onPressed: onToggleValues,
+            ),
+          ],
         ],
       ),
     );
@@ -126,6 +152,50 @@ class _ToolbarButton extends StatelessWidget {
           const SizedBox(width: 4),
           Text(label, style: const TextStyle(fontSize: 12)),
         ],
+      ),
+    );
+  }
+}
+
+class _ToggleButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _ToggleButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor:
+              isActive ? const Color(0xFF6C5CE7) : Colors.white.withValues(alpha: 0.6),
+          backgroundColor:
+              isActive ? const Color(0xFF6C5CE7).withValues(alpha: 0.15) : null,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
       ),
     );
   }

@@ -90,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen>
                     width: size.width * 0.35,
                     height: size.width * 0.38,
                     child: SvgPicture.asset(
-                      'assets/kicad_animated_00.svg',
+                      'assets/presentacion.svg',
                       fit: BoxFit.contain,
                     ),
                   ),
