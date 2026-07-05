@@ -1,9 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/schematic.dart';
 import '../models/pcb.dart';
-import '../models/schematic_element.dart';
-import '../models/pcb_element.dart';
 import '../parsers/schematic_parser.dart';
 import '../parsers/pcb_parser.dart';
 
@@ -100,9 +101,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Select/deselect an element.
+  /// Select/deselect an element. In chat mode, inserts a note with the element ref.
   void selectElement(String? id) {
     _selectedElementId = id;
+    if (_chatMode && id != null) {
+      final ref = getSelectedElementRef();
+      if (ref != null) {
+        // Auto-insert the reference; chat mode user then types their note after it
+        _pendingRef = ref;
+      }
+    }
     notifyListeners();
   }
 
@@ -225,5 +233,125 @@ class AppState extends ChangeNotifier {
       _showLayers = true;
       notifyListeners();
     }
+  }
+
+  // ── Notes / Chat ──────────────────────────────────────
+
+  bool _showNotes = false;
+  bool _chatMode = false;
+  List<String> _notes = [];
+  String _projectNotesDir = '';
+  String? _pendingRef;
+
+  bool get showNotes => _showNotes;
+  bool get chatMode => _chatMode;
+  List<String> get notes => List.unmodifiable(_notes);
+  String? get pendingRef => _pendingRef;
+
+  void toggleNotes() {
+    _showNotes = !_showNotes;
+    if (_showNotes) _loadNotes();
+    notifyListeners();
+  }
+
+  void toggleChatMode() {
+    _chatMode = !_chatMode;
+    notifyListeners();
+  }
+
+  String _notesFileName() {
+    final base = _rootFileName.replaceAll('.kicad_sch', '').replaceAll('.kicad_pcb', '');
+    return '${base}_notes.md';
+  }
+
+  Future<String> _notesFilePath() async {
+    if (_projectNotesDir.isEmpty) {
+      final dir = await getApplicationDocumentsDirectory();
+      _projectNotesDir = dir.path;
+    }
+    return '$_projectNotesDir/${_notesFileName()}';
+  }
+
+  Future<void> _loadNotes() async {
+    try {
+      final path = await _notesFilePath();
+      final file = File(path);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        _notes = content.split('\n').where((l) => l.trim().isNotEmpty).toList();
+      } else {
+        _notes = [];
+      }
+    } catch (_) {
+      _notes = [];
+    }
+    notifyListeners();
+  }
+
+  Future<void> addNote(String text) async {
+    if (text.trim().isEmpty) return;
+    _notes.add(text.trim());
+    _pendingRef = null;
+    notifyListeners();
+    _saveNotes();
+  }
+
+  Future<void> insertNoteWithRef(String ref, String text) async {
+    final line = '$ref $text';
+    await addNote(line);
+  }
+
+  Future<void> _saveNotes() async {
+    try {
+      final path = await _notesFilePath();
+      final file = File(path);
+      final content = StringBuffer();
+      content.writeln('# Notes - $_rootFileName');
+      content.writeln();
+      for (final note in _notes) {
+        final line = note.startsWith('[') ? '- $note' : '- $note';
+        content.writeln(line);
+      }
+      await file.writeAsString(content.toString());
+    } catch (_) {}
+  }
+
+  Future<void> shareNotes() async {
+    final path = await _notesFilePath();
+    final file = File(path);
+    if (!await file.exists()) {
+      await file.writeAsString('');
+    }
+    final content = await file.readAsString();
+    await SharePlus.instance.share(
+      ShareParams(text: content.isNotEmpty ? content : '(empty notes)'),
+    );
+  }
+
+  String? getSelectedElementRef() {
+    if (_selectedElementId == null) return null;
+    final id = _selectedElementId!;
+
+    // Check schematic elements
+    if (_schematic != null) {
+      for (final el in _schematic!.elements) {
+        if (el.uuid == id) {
+          final name = el.text ?? 'unknown';
+          final value = el.properties['Value'] ?? '';
+          return '[${_currentFileName.replaceAll('.kicad_sch', '')}:$name${value.isNotEmpty ? ' ($value)' : ''}]';
+        }
+      }
+    }
+
+    // Check PCB footprints
+    if (_pcb != null) {
+      for (final fp in _pcb!.footprints) {
+        if (fp.uuid == id) {
+          return '[${_currentFileName.replaceAll('.kicad_pcb', '')}:${fp.reference}]';
+        }
+      }
+    }
+
+    return null;
   }
 }

@@ -9,8 +9,10 @@ class AppToolbar extends StatelessWidget {
   final VoidCallback onToggleLayers;
   final VoidCallback onToggleNames;
   final VoidCallback onToggleValues;
+  final VoidCallback onToggleNotes;
   final bool showNames;
   final bool showValues;
+  final bool showNotes;
 
   const AppToolbar({
     super.key,
@@ -22,8 +24,10 @@ class AppToolbar extends StatelessWidget {
     required this.onToggleLayers,
     required this.onToggleNames,
     required this.onToggleValues,
+    required this.onToggleNotes,
     required this.showNames,
     required this.showValues,
+    required this.showNotes,
   });
 
   @override
@@ -90,6 +94,16 @@ class AppToolbar extends StatelessWidget {
             icon: Icons.layers,
             label: 'Layers',
             onPressed: onToggleLayers,
+          ),
+          const SizedBox(width: 8),
+          _buildSeparator(),
+          const SizedBox(width: 8),
+          // Notes toggle
+          _ToggleButton(
+            icon: Icons.note_alt,
+            label: 'Notes',
+            isActive: showNotes,
+            onPressed: onToggleNotes,
           ),
           if (currentView == 'schematic') ...[
             const SizedBox(width: 8),

@@ -9,6 +9,7 @@ import 'bom_view.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/hierarchy_panel.dart';
 import '../widgets/layer_panel.dart';
+import '../widgets/notes_panel.dart';
 import '../models/schematic.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -240,8 +241,10 @@ class _MainViewState extends State<MainView> {
                   },
                   onToggleNames: () => appState.toggleComponentNames(),
                   onToggleValues: () => appState.toggleComponentValues(),
+                  onToggleNotes: () => appState.toggleNotes(),
                   showNames: appState.showComponentNames,
                   showValues: appState.showComponentValues,
+                  showNotes: appState.showNotes,
                 ),
                 Expanded(
                   child: Row(
@@ -263,6 +266,8 @@ class _MainViewState extends State<MainView> {
                       Expanded(
                         child: _buildCanvas(appState),
                       ),
+                      if (appState.showNotes)
+                        const NotesPanel(),
                     ],
                   ),
                 ),
