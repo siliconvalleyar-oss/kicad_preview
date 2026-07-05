@@ -1,7 +1,6 @@
 import 'dart:math' show sin, pi;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'main_view.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -86,14 +85,14 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     );
                   },
-                  child: SizedBox(
-                    width: size.width * 0.35,
-                    height: size.width * 0.38,
-                    child: SvgPicture.asset(
-                      'assets/presentacion.svg',
-                      fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: size.width * 0.35,
+                      height: size.width * 0.38,
+                      child: Image.asset(
+                        'assets/logo.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
-                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(

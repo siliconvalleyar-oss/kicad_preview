@@ -1,7 +1,7 @@
 name: kicad_preview
 description: "Professional KiCad file previewer for schematics and PCB"
 publish_to: 'none'
-version: 1.0.6+1
+version: 1.0.7+1
 
 environment:
   sdk: ^3.12.1
@@ -26,9 +26,5 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/presentacion.svg
-    - assets/logo/logo.png
-    - assets/logo/logo_00.png
-    - assets/logo/logo_01.png
-    - assets/logo/logo_02.png
+    - assets/logo.png
     - assets/files_kicad/

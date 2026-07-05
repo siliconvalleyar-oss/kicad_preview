@@ -9,8 +9,9 @@ class HierarchyPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final sheets = appState.sheets;
+    final rootName = appState.rootFileName;
     final currentName = appState.currentFileName;
-    final isRoot = currentName == 'cnc_pic32.kicad_sch' || currentName.isEmpty;
+    final isRoot = currentName == rootName || currentName.isEmpty;
 
     return Container(
       width: 200,
@@ -55,7 +56,7 @@ class HierarchyPanel extends StatelessWidget {
               children: [
                 // Root sheet
                 _SheetItem(
-                  name: 'cnc_pic32.kicad_sch',
+                  name: rootName.isNotEmpty ? rootName : 'Root',
                   isRoot: true,
                   isSelected: isRoot,
                   onTap: () {

@@ -14,6 +14,7 @@ class AppState extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String _currentFileName = '';
+  String _rootFileName = '';
   String _currentView = 'schematic'; // 'schematic', 'pcb', 'bom'
   String? _selectedElementId;
   bool _showHierarchy = true;
@@ -35,6 +36,7 @@ class AppState extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get currentFileName => _currentFileName;
+  String get rootFileName => _rootFileName;
   String get currentView => _currentView;
   String? get selectedElementId => _selectedElementId;
   bool get showHierarchy => _showHierarchy;
@@ -52,7 +54,7 @@ class AppState extends ChangeNotifier {
   }
 
   /// Load a schematic file from raw content.
-  Future<void> loadSchematic(String content, {String fileName = ''}) async {
+  Future<void> loadSchematic(String content, {String fileName = '', bool isRoot = true}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -60,6 +62,7 @@ class AppState extends ChangeNotifier {
     try {
       _schematic = SchematicParser.parse(content, fileName: fileName);
       _currentFileName = fileName;
+      if (isRoot) _rootFileName = fileName;
       _currentView = 'schematic';
       _schematicOffset = Offset.zero;
       _schematicScale = 1.0;
@@ -179,6 +182,7 @@ class AppState extends ChangeNotifier {
       _currentView = 'schematic';
       _schematicOffset = Offset.zero;
       _schematicScale = 1.0;
+      _showHierarchy = true;
     } catch (e) {
       _error = 'Error loading sheet: $e';
     }
@@ -189,19 +193,21 @@ class AppState extends ChangeNotifier {
 
   /// Navigate back to the root schematic.
   Future<void> navigateToRoot() async {
+    if (_rootFileName.isEmpty) return;
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final content = await rootBundle.loadString(
-        'assets/files_kicad/cnc_pic32.kicad_sch',
+        'assets/files_kicad/$_rootFileName',
       );
-      _schematic = SchematicParser.parse(content, fileName: 'cnc_pic32.kicad_sch');
-      _currentFileName = 'cnc_pic32.kicad_sch';
+      _schematic = SchematicParser.parse(content, fileName: _rootFileName);
+      _currentFileName = _rootFileName;
       _currentView = 'schematic';
       _schematicOffset = Offset.zero;
       _schematicScale = 1.0;
+      _showHierarchy = true;
     } catch (e) {
       _error = 'Error loading root sheet: $e';
     }

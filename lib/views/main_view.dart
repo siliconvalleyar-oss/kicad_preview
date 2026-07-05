@@ -73,7 +73,7 @@ class _MainViewState extends State<MainView> {
       final schContent = await rootBundle.loadString(
         'assets/files_kicad/project_pi.kicad_sch',
       );
-      await appState.loadSchematic(schContent, fileName: 'project_pi.kicad_sch');
+      await appState.loadSchematic(schContent, fileName: 'project_pi.kicad_sch', isRoot: true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -145,7 +145,7 @@ class _MainViewState extends State<MainView> {
     try {
       final schContent =
           await rootBundle.loadString('assets/files_kicad/$schFile');
-      await appState.loadSchematic(schContent, fileName: schFile);
+      await appState.loadSchematic(schContent, fileName: schFile, isRoot: true);
 
       try {
         final pcbContent =
@@ -429,7 +429,7 @@ class _MainViewState extends State<MainView> {
           ],
           const Spacer(),
           Text(
-            'KiCad Preview v1.0.6',
+            'KiCad Preview v1.0.7',
             style: TextStyle(
               color: Colors.white.withAlpha(77),
               fontSize: 11,
