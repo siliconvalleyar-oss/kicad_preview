@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +12,6 @@ import '../widgets/layer_panel.dart';
 import '../models/schematic.dart';
 import 'package:file_picker/file_picker.dart';
 
-// Conditional import for native file reading
 // ignore: depend_on_referenced_packages
 import 'dart:convert' show utf8;
 
@@ -23,12 +23,38 @@ class MainView extends StatefulWidget {
 }
 
 class _MainViewState extends State<MainView> {
+  Timer? _panelTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDemoProject();
     });
+  }
+
+  @override
+  void dispose() {
+    _panelTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPanelTimer() {
+    _panelTimer?.cancel();
+    _panelTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      final appState = context.read<AppState>();
+      if (appState.currentView == 'schematic' && appState.showHierarchy) {
+        appState.toggleHierarchy();
+      } else if (appState.currentView == 'pcb' && appState.showLayers) {
+        appState.toggleLayers();
+      }
+    });
+  }
+
+  void _onPanelInteracted() {
+    _panelTimer?.cancel();
+    _startPanelTimer();
   }
 
   Future<void> _loadDemoProject() async {
@@ -45,7 +71,6 @@ class _MainViewState extends State<MainView> {
         );
         await appState.loadPCB(pcbContent, fileName: 'cnc_pic32.kicad_pcb');
       } catch (_) {
-        // PCB loading is optional
       }
     } catch (e) {
       if (mounted) {
@@ -112,18 +137,32 @@ class _MainViewState extends State<MainView> {
                   currentFileName: appState.currentFileName,
                   currentView: appState.currentView,
                   onViewChanged: (view) => appState.setView(view),
-                  onToggleHierarchy: () => appState.toggleHierarchy(),
-                  onToggleLayers: () => appState.toggleLayers(),
+                  onToggleHierarchy: () {
+                    appState.toggleHierarchy();
+                    if (appState.showHierarchy) _startPanelTimer();
+                  },
+                  onToggleLayers: () {
+                    appState.toggleLayers();
+                    if (appState.showLayers) _startPanelTimer();
+                  },
                 ),
                 Expanded(
                   child: Row(
                     children: [
                       if (appState.showHierarchy &&
                           appState.currentView == 'schematic')
-                        const HierarchyPanel(),
+                        GestureDetector(
+                          onTap: _onPanelInteracted,
+                          onPanDown: (_) => _onPanelInteracted(),
+                          child: const HierarchyPanel(),
+                        ),
                       if (appState.showLayers &&
                           appState.currentView == 'pcb')
-                        const LayerPanel(),
+                        GestureDetector(
+                          onTap: _onPanelInteracted,
+                          onPanDown: (_) => _onPanelInteracted(),
+                          child: const LayerPanel(),
+                        ),
                       Expanded(
                         child: _buildCanvas(appState),
                       ),

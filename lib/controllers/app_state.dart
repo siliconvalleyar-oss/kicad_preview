@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import '../models/schematic.dart';
 import '../models/pcb.dart';
 import '../models/schematic_element.dart';
@@ -149,10 +150,60 @@ class AppState extends ChangeNotifier {
     return _schematic!.sheets;
   }
 
-  /// Navigate to a sheet.
+  /// Navigate to a sub-sheet by loading its file from assets.
   Future<void> navigateToSheet(String fileName) async {
-    // This would load the referenced sheet file
-    _currentFileName = fileName;
+    _isLoading = true;
+    _error = null;
     notifyListeners();
+
+    try {
+      final content = await rootBundle.loadString(
+        'assets/files_kicad/$fileName',
+      );
+      _schematic = SchematicParser.parse(content, fileName: fileName);
+      _currentFileName = fileName;
+      _currentView = 'schematic';
+      _schematicOffset = Offset.zero;
+      _schematicScale = 1.0;
+    } catch (e) {
+      _error = 'Error loading sheet: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Navigate back to the root schematic.
+  Future<void> navigateToRoot() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final content = await rootBundle.loadString(
+        'assets/files_kicad/cnc_pic32.kicad_sch',
+      );
+      _schematic = SchematicParser.parse(content, fileName: 'cnc_pic32.kicad_sch');
+      _currentFileName = 'cnc_pic32.kicad_sch';
+      _currentView = 'schematic';
+      _schematicOffset = Offset.zero;
+      _schematicScale = 1.0;
+    } catch (e) {
+      _error = 'Error loading root sheet: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Show the hierarchy panel (called from toolbar).
+  void showPanel() {
+    if (_currentView == 'schematic' && !_showHierarchy) {
+      _showHierarchy = true;
+      notifyListeners();
+    } else if (_currentView == 'pcb' && !_showLayers) {
+      _showLayers = true;
+      notifyListeners();
+    }
   }
 }

@@ -9,6 +9,8 @@ class HierarchyPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final sheets = appState.sheets;
+    final currentName = appState.currentFileName;
+    final isRoot = currentName == 'cnc_pic32.kicad_sch' || currentName.isEmpty;
 
     return Container(
       width: 200,
@@ -53,19 +55,19 @@ class HierarchyPanel extends StatelessWidget {
               children: [
                 // Root sheet
                 _SheetItem(
-                  name: appState.currentFileName.isNotEmpty
-                      ? appState.currentFileName
-                      : 'Root',
+                  name: 'cnc_pic32.kicad_sch',
                   isRoot: true,
-                  isSelected: true,
-                  onTap: () {},
+                  isSelected: isRoot,
+                  onTap: () {
+                    if (!isRoot) appState.navigateToRoot();
+                  },
                 ),
                 // Sub-sheets
                 ...sheets.map((sheet) => _SheetItem(
-                      name: sheet.name,
+                      name: sheet.name.isNotEmpty ? sheet.name : sheet.fileName,
                       fileName: sheet.fileName,
                       isRoot: false,
-                      isSelected: false,
+                      isSelected: currentName == sheet.fileName,
                       onTap: () => appState.navigateToSheet(sheet.fileName),
                     )),
               ],
@@ -134,7 +136,7 @@ class _SheetItem extends StatelessWidget {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (fileName != null)
+                  if (fileName != null && !isRoot)
                     Text(
                       fileName!,
                       style: TextStyle(

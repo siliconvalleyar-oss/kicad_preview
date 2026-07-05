@@ -72,18 +72,17 @@ class AppToolbar extends StatelessWidget {
           ),
           const Spacer(),
           // Panel toggles
-          if (currentView == 'schematic')
-            _ToolbarButton(
-              icon: Icons.account_tree,
-              label: 'Hierarchy',
-              onPressed: onToggleHierarchy,
-            ),
-          if (currentView == 'pcb')
-            _ToolbarButton(
-              icon: Icons.layers,
-              label: 'Layers',
-              onPressed: onToggleLayers,
-            ),
+          _ToolbarButton(
+            icon: Icons.account_tree,
+            label: 'Hierarchy',
+            onPressed: onToggleHierarchy,
+          ),
+          const SizedBox(width: 4),
+          _ToolbarButton(
+            icon: Icons.layers,
+            label: 'Layers',
+            onPressed: onToggleLayers,
+          ),
         ],
       ),
     );

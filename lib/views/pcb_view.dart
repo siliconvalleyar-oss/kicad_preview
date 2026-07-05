@@ -108,6 +108,9 @@ class PCBPainter extends CustomPainter {
 
     // Draw vias
     for (final via in pcb.vias) {
+      final viaLayer = pcb.getLayerById(_layerNameToId(via.layers.first));
+      if (viaLayer != null && !viaLayer.visible) continue;
+
       final paint = Paint()
         ..color = const Color(0xFF95A5A6)
         ..style = PaintingStyle.fill;
@@ -137,6 +140,12 @@ class PCBPainter extends CustomPainter {
 
   void _drawFootprint(Canvas canvas, PCBFootprint fp) {
     final offset = Offset(fp.x * 10, fp.y * 10);
+    final fpLayer = fp.layer != null
+        ? pcb.getLayerById(_layerNameToId(fp.layer!))
+        : null;
+    final fpVisible = fpLayer == null || fpLayer.visible;
+
+    if (!fpVisible) return;
 
     // Draw pads
     for (final pad in fp.pads) {
@@ -194,19 +203,44 @@ class PCBPainter extends CustomPainter {
       );
     }
 
-    // Draw reference text
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: fp.reference,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.7),
-          fontSize: 8,
+    // Draw footprint texts
+    for (final text in fp.texts) {
+      final layer = pcb.getLayerById(_layerNameToId(text.layer));
+      if (layer != null && !layer.visible) continue;
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: text.text,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: text.size * 8,
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, offset + const Offset(-10, -10));
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(text.x * 10, text.y * 10),
+      );
+    }
+
+    // Draw reference text (always on F.SilkS)
+    final refLayer = pcb.getLayerById(_layerNameToId('F.SilkS'));
+    if (refLayer == null || refLayer.visible) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: fp.reference,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 8,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, offset + const Offset(-10, -10));
+    }
   }
 
   void _drawGrid(Canvas canvas, Size size) {
