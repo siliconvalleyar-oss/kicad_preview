@@ -12,40 +12,35 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _entryController;
+  late AnimationController _loopController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _floatAnimation;
-  late Animation<double> _spinAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _entryController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    );
+      duration: const Duration(milliseconds: 1500),
+    )..forward();
+
+    _loopController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+      CurvedAnimation(parent: _entryController, curve: Curves.easeIn),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _entryController, curve: Curves.elasticOut),
     );
 
-    _floatAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    _spinAnimation = Tween<double>(begin: -0.05, end: 0.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    _controller.forward();
-
-    Future.delayed(const Duration(milliseconds: 3500), () {
+    Future.delayed(const Duration(milliseconds: 3000), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -58,12 +53,15 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _entryController.dispose();
+    _loopController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       body: Center(
@@ -71,63 +69,63 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _fadeAnimation,
           child: ScaleTransition(
             scale: _scaleAnimation,
-            child: AnimatedBuilder(
-              animation: _floatAnimation,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _spinAnimation.value,
-                  child: Transform.translate(
-                    offset: Offset(
-                      0,
-                      -8 * sin(_floatAnimation.value * pi * 2),
-                    ),
-                    child: child,
-                  ),
-                );
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 140,
-                    height: 150,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedBuilder(
+                  animation: _loopController,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: 0.03 * sin(_loopController.value * pi * 2),
+                      child: Transform.translate(
+                        offset: Offset(
+                          0,
+                          -12 * sin(_loopController.value * pi * 2),
+                        ),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: size.width * 0.35,
+                    height: size.width * 0.38,
                     child: SvgPicture.asset(
                       'assets/kicad_animated_00.svg',
                       fit: BoxFit.contain,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'KiCad Preview',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1.2,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'KiCad Preview',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Schematic & PCB Viewer',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF6C5CE7),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Schematic & PCB Viewer',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.7),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF6C5CE7),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

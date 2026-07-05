@@ -15,6 +15,11 @@ import 'package:file_picker/file_picker.dart';
 // ignore: depend_on_referenced_packages
 import 'dart:convert' show utf8;
 
+/// Available KiCad files bundled in assets.
+const List<Map<String, String>> _kicadFiles = [
+  {'name': 'cnc_pic32', 'sch': 'cnc_pic32.kicad_sch', 'pcb': 'cnc_pic32.kicad_pcb'},
+];
+
 class MainView extends StatefulWidget {
   const MainView({super.key});
 
@@ -81,10 +86,94 @@ class _MainViewState extends State<MainView> {
     }
   }
 
-  Future<void> _openFile() async {
+  void _openFile() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF2D2D44),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.folder_open, color: Color(0xFF6C5CE7), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Open Project',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Color(0xFF3D3D5C), height: 1),
+                ..._kicadFiles.map((f) => ListTile(
+                  leading: const Icon(Icons.developer_board,
+                      color: Color(0xFF6C5CE7)),
+                  title: Text(
+                    f['name']!,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  subtitle: const Text('Tap to load',
+                      style: TextStyle(color: Colors.white54, fontSize: 11)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _loadAssetProject(f['sch']!, f['pcb']!);
+                  },
+                )),
+            const Divider(color: Color(0xFF3D3D5C), height: 1),
+            ListTile(
+              leading:
+                  const Icon(Icons.phone_android, color: Color(0xFF6C5CE7)),
+              title: const Text('Browse device storage...',
+                  style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromDevice();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadAssetProject(String schFile, String pcbFile) async {
+    final appState = context.read<AppState>();
+    try {
+      final schContent =
+          await rootBundle.loadString('assets/files_kicad/$schFile');
+      await appState.loadSchematic(schContent, fileName: schFile);
+
+      try {
+        final pcbContent =
+            await rootBundle.loadString('assets/files_kicad/$pcbFile');
+        await appState.loadPCB(pcbContent, fileName: pcbFile);
+      } catch (_) {
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Loaded: ${schFile.replaceAll('.kicad_sch', '')}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromDevice() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['kicad_sch', 'kicad_pcb'],
+      type: FileType.any,
       withData: true,
     );
 
@@ -106,6 +195,13 @@ class _MainViewState extends State<MainView> {
           await appState.loadSchematic(content, fileName: fileName);
         } else if (fileName.endsWith('.kicad_pcb')) {
           await appState.loadPCB(content, fileName: fileName);
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Unsupported file type')),
+            );
+          }
+          return;
         }
 
         if (mounted) {
@@ -222,6 +318,7 @@ class _MainViewState extends State<MainView> {
           return _buildEmptyState('No schematic loaded');
         }
         return SchematicView(
+          key: ValueKey('sch_${appState.currentFileName}'),
           schematic: appState.schematic!,
         );
       case 'pcb':
@@ -229,6 +326,7 @@ class _MainViewState extends State<MainView> {
           return _buildEmptyState('No PCB loaded');
         }
         return PCBView(
+          key: ValueKey('pcb_${appState.currentFileName}'),
           pcb: appState.pcb!,
         );
       case 'bom':
@@ -330,7 +428,7 @@ class _MainViewState extends State<MainView> {
           ],
           const Spacer(),
           Text(
-            'KiCad Preview v1.0.0',
+            'KiCad Preview v1.0.5',
             style: TextStyle(
               color: Colors.white.withAlpha(77),
               fontSize: 11,

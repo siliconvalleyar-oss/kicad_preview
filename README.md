@@ -62,7 +62,7 @@ lib/
 
 ## Version
 
-Current version: **1.0.4** <!-- MUST match VERSION file -->
+Current version: **1.0.5** <!-- MUST match VERSION file -->
 
 ## License
 

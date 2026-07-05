@@ -18,6 +18,67 @@ class _PCBViewState extends State<PCBView> {
       TransformationController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _centerView());
+  }
+
+  void _centerView() {
+    final size = context.size;
+    if (size == null) return;
+
+    double minX = double.infinity, minY = double.infinity;
+    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+
+    for (final track in widget.pcb.tracks) {
+      for (final p in [Offset(track.x1, track.y1), Offset(track.x2, track.y2)]) {
+        final x = p.dx * 10;
+        final y = p.dy * 10;
+        if (x < minX) minX = x; if (y < minY) minY = y;
+        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      }
+    }
+    for (final via in widget.pcb.vias) {
+      final x = via.x * 10;
+      final y = via.y * 10;
+      if (x < minX) minX = x; if (y < minY) minY = y;
+      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+    }
+    for (final fp in widget.pcb.footprints) {
+      final x = fp.x * 10;
+      final y = fp.y * 10;
+      if (x < minX) minX = x; if (y < minY) minY = y;
+      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+    }
+    for (final line in widget.pcb.graphicalLines) {
+      for (final p in [Offset(line.x1, line.y1), Offset(line.x2, line.y2)]) {
+        final x = p.dx * 10;
+        final y = p.dy * 10;
+        if (x < minX) minX = x; if (y < minY) minY = y;
+        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      }
+    }
+
+    if (minX == double.infinity) return;
+
+    final contentWidth = maxX - minX;
+    final contentHeight = maxY - minY;
+    final contentCenterX = (minX + maxX) / 2;
+    final contentCenterY = (minY + maxY) / 2;
+
+    final scaleX = size.width / (contentWidth + 100);
+    final scaleY = size.height / (contentHeight + 100);
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+
+    final tx = size.width / 2 - contentCenterX * scale;
+    final ty = size.height / 2 - contentCenterY * scale;
+
+    _transformController.value = Matrix4.identity()
+      ..translate(tx, ty)
+      ..scale(scale);
+  }
+
+  @override
   void dispose() {
     _transformController.dispose();
     super.dispose();

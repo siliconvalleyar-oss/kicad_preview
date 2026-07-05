@@ -18,6 +18,66 @@ class _SchematicViewState extends State<SchematicView> {
       TransformationController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _centerView());
+  }
+
+  void _centerView() {
+    final size = context.size;
+    if (size == null) return;
+
+    double minX = double.infinity, minY = double.infinity;
+    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+
+    for (final wire in widget.schematic.wires) {
+      for (final p in wire.points) {
+        final x = p.x * 4;
+        final y = p.y * 4;
+        if (x < minX) minX = x; if (y < minY) minY = y;
+        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      }
+    }
+    for (final junction in widget.schematic.junctions) {
+      final x = junction.position.x * 4;
+      final y = junction.position.y * 4;
+      if (x < minX) minX = x; if (y < minY) minY = y;
+      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+    }
+    for (final sheet in widget.schematic.sheets) {
+      final x = (sheet.x + sheet.width) * 4;
+      final y = (sheet.y + sheet.height) * 4;
+      if (sheet.x * 4 < minX) minX = sheet.x * 4;
+      if (sheet.y * 4 < minY) minY = sheet.y * 4;
+      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+    }
+    for (final text in widget.schematic.texts) {
+      final x = text.position.x * 4;
+      final y = text.position.y * 4;
+      if (x < minX) minX = x; if (y < minY) minY = y;
+      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+    }
+
+    if (minX == double.infinity) return;
+
+    final contentWidth = maxX - minX;
+    final contentHeight = maxY - minY;
+    final contentCenterX = (minX + maxX) / 2;
+    final contentCenterY = (minY + maxY) / 2;
+
+    final scaleX = size.width / (contentWidth + 100);
+    final scaleY = size.height / (contentHeight + 100);
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+
+    final tx = size.width / 2 - contentCenterX * scale;
+    final ty = size.height / 2 - contentCenterY * scale;
+
+    _transformController.value = Matrix4.identity()
+      ..translate(tx, ty)
+      ..scale(scale);
+  }
+
+  @override
   void dispose() {
     _transformController.dispose();
     super.dispose();
