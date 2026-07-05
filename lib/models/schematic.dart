@@ -1,5 +1,14 @@
 import 'schematic_element.dart';
 
+class RectDim {
+  final double x;
+  final double y;
+  final double w;
+  final double h;
+
+  const RectDim(this.x, this.y, this.w, this.h);
+}
+
 class Schematic {
   final String fileName;
   final String version;
@@ -10,6 +19,7 @@ class Schematic {
   final List<Junction> junctions;
   final List<Wire> wires;
   final List<SchematicText> texts;
+  final Map<String, List<RectDim>> symbolBodies;
 
   const Schematic({
     required this.fileName,
@@ -21,6 +31,7 @@ class Schematic {
     this.junctions = const [],
     this.wires = const [],
     this.texts = const [],
+    this.symbolBodies = const {},
   });
 }
 

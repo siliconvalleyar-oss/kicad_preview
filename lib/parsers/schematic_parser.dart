@@ -27,6 +27,39 @@ class SchematicParser {
     final wires = <Wire>[];
     final texts = <SchematicText>[];
 
+    // Parse lib_symbols to get body dimensions
+    final symbolBodies = <String, List<RectDim>>{};
+    for (final libSymbols in SExprParser.findAll(root, 'lib_symbols')) {
+      for (final symEntry in libSymbols) {
+        if (symEntry is List<dynamic> && symEntry.length >= 2 && symEntry[0] == 'symbol') {
+          final libId = symEntry[1].toString();
+          if (libId.isEmpty) continue;
+          final rects = <RectDim>[];
+          for (final item in symEntry) {
+            if (item is List<dynamic> && item.length >= 2 && item[0] == 'rectangle') {
+              final start = SExprParser.findFirst(item, 'start');
+              final end = SExprParser.findFirst(item, 'end');
+              if (start != null && end != null && start.length >= 3 && end.length >= 3) {
+                final x1 = double.tryParse(start[1].toString()) ?? 0;
+                final y1 = double.tryParse(start[2].toString()) ?? 0;
+                final x2 = double.tryParse(end[1].toString()) ?? 0;
+                final y2 = double.tryParse(end[2].toString()) ?? 0;
+                rects.add(RectDim(
+                  (x1 + x2) / 2,
+                  (y1 + y2) / 2,
+                  (x2 - x1).abs(),
+                  (y2 - y1).abs(),
+                ));
+              }
+            }
+          }
+          if (rects.isNotEmpty) {
+            symbolBodies[libId] = rects;
+          }
+        }
+      }
+    }
+
     // Parse wires
     for (final wire in SExprParser.findAll(root, 'wire')) {
       final pts = SExprParser.findFirst(wire, 'pts');
@@ -265,6 +298,7 @@ class SchematicParser {
       junctions: junctions,
       wires: wires,
       texts: texts,
+      symbolBodies: symbolBodies,
     );
   }
 

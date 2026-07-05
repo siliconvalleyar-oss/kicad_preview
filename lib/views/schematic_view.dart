@@ -327,11 +327,24 @@ class SchematicPainter extends CustomPainter {
         ..color = const Color(0xFF2D2D44)
         ..style = PaintingStyle.fill;
 
-      if (libId.startsWith('power:')) {
-        // Power symbol: small circle or triangle
+      // Try to use actual dimensions from lib_symbol parsing
+      final bodies = schematic.symbolBodies[libId];
+      if (bodies != null && bodies.isNotEmpty) {
+        for (final rect in bodies) {
+          final rcx = cx + rect.x * 4;
+          final rcy = cy + rect.y * 4;
+          final rw = rect.w * 4;
+          final rh = rect.h * 4;
+          final rrect = RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(rcx, rcy), width: rw, height: rh),
+            const Radius.circular(1),
+          );
+          canvas.drawRRect(rrect, bodyFill);
+          canvas.drawRRect(rrect, bodyPaint);
+        }
+      } else if (libId.startsWith('power:')) {
         _drawPowerSymbol(canvas, cx, cy, libId, bodyPaint);
       } else if (libId.contains(':R_') || libId == 'Device:R') {
-        // Resistor: rectangle
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(center: Offset(cx, cy), width: 20, height: 10),
@@ -347,11 +360,9 @@ class SchematicPainter extends CustomPainter {
           bodyPaint,
         );
       } else if (libId.contains(':C_') || libId == 'Device:C') {
-        // Capacitor: two parallel lines
         canvas.drawLine(Offset(cx - 4, cy - 6), Offset(cx - 4, cy + 6), bodyPaint);
         canvas.drawLine(Offset(cx + 4, cy - 6), Offset(cx + 4, cy + 6), bodyPaint);
       } else if (libId.contains(':D_') || libId == 'Device:D') {
-        // Diode: triangle + line
         final path = Path()
           ..moveTo(cx, cy - 8)
           ..lineTo(cx + 8, cy)
@@ -360,11 +371,9 @@ class SchematicPainter extends CustomPainter {
         canvas.drawPath(path, bodyPaint);
         canvas.drawLine(Offset(cx - 4, cy - 8), Offset(cx - 4, cy + 8), bodyPaint);
       } else if (libId.contains(':Q_') || libId.contains('Transistor')) {
-        // Transistor: circle
         canvas.drawCircle(Offset(cx, cy), 10, bodyFill);
         canvas.drawCircle(Offset(cx, cy), 10, bodyPaint);
       } else {
-        // Default: rectangle
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(center: Offset(cx, cy), width: 16, height: 14),

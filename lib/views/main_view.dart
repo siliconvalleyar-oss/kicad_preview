@@ -75,6 +75,14 @@ class _MainViewState extends State<MainView> {
         'assets/files_kicad/project_pi.kicad_sch',
       );
       await appState.loadSchematic(schContent, fileName: 'project_pi.kicad_sch', isRoot: true);
+
+      try {
+        final pcbContent = await rootBundle.loadString(
+          'assets/files_kicad/project_pi.kicad_pcb',
+        );
+        await appState.loadPCB(pcbContent, fileName: 'project_pi.kicad_pcb');
+      } catch (_) {
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
