@@ -1,7 +1,7 @@
 name: kicad_preview
 description: "Professional KiCad file previewer for schematics and PCB"
 publish_to: 'none'
-version: 1.0.8+1
+version: 1.0.9+1
 
 environment:
   sdk: ^3.12.1

@@ -442,7 +442,7 @@ class _MainViewState extends State<MainView> {
           ],
           const Spacer(),
           Text(
-            'KiCad Preview v1.0.8',
+            'KiCad Preview v1.0.9',
             style: TextStyle(
               color: Colors.white.withAlpha(77),
               fontSize: 11,
