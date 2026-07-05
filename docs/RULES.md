@@ -11,6 +11,7 @@ puede borrarlo, modificarlo, renombrarlo ni editarlo bajo ninguna circunstancia.
 - Ciclo: v1.0.0 → v1.0.1 → ... → v1.0.9 → v1.1.0 → ... → v1.9.9 → v2.0.0...
 - El archivo `VERSION` en la raíz contiene solo el número sin 'v' (ej: `1.0.0`).
 - Cada tag debe coincidir con el contenido de `VERSION`.
+- La versión indicada en `README.md` (línea "Current version:") debe ser idéntica al contenido de `VERSION`.
 
 ## B. Reglas de Código (Obligatorias)
 1. Todo acceso a archivos con try-catch y feedback al usuario (SnackBar, dialog).
