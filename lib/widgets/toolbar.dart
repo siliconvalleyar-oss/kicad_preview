@@ -13,6 +13,10 @@ class AppToolbar extends StatelessWidget {
   final bool showNames;
   final bool showValues;
   final bool showNotes;
+  final bool showPcbRefs;
+  final VoidCallback? onTogglePcbRefs;
+  final VoidCallback? onTogglePcbSide;
+  final VoidCallback? onTogglePcbFlipped;
 
   const AppToolbar({
     super.key,
@@ -28,12 +32,18 @@ class AppToolbar extends StatelessWidget {
     required this.showNames,
     required this.showValues,
     required this.showNotes,
+    this.showPcbRefs = false,
+    this.onTogglePcbRefs,
+    this.onTogglePcbSide,
+    this.onTogglePcbFlipped,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: const BoxDecoration(
         color: Color(0xFF2D2D44),
         border: Border(
@@ -42,80 +52,135 @@ class AppToolbar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // App icon/name
-          const Icon(Icons.developer_board, color: Color(0xFF6C5CE7), size: 22),
-          const SizedBox(width: 8),
-          const Text(
-            'KiCad Preview',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+          // App icon only (no text)
+          const Icon(Icons.developer_board, color: Color(0xFF6C5CE7), size: 20),
+          if (isPortrait) ...[
+            const SizedBox(width: 4),
+            _ToolbarButton(
+              icon: Icons.folder_open,
+              label: '',
+              onPressed: onOpenFile,
             ),
-          ),
-          const SizedBox(width: 20),
-          // Open file button
-          _ToolbarButton(
-            icon: Icons.folder_open,
-            label: 'Open',
-            onPressed: onOpenFile,
-          ),
-          const SizedBox(width: 8),
-          // Separator
-          _buildSeparator(),
-          // View buttons
-          _ViewButton(
-            label: 'Schematic',
-            icon: Icons.schema,
-            isActive: currentView == 'schematic',
-            onPressed: () => onViewChanged('schematic'),
-          ),
-          _ViewButton(
-            label: 'PCB',
-            icon: Icons.grid_4x4,
-            isActive: currentView == 'pcb',
-            onPressed: () => onViewChanged('pcb'),
-          ),
-          _ViewButton(
-            label: 'BOM',
-            icon: Icons.list_alt,
-            isActive: currentView == 'bom',
-            onPressed: () => onViewChanged('bom'),
-          ),
-          const Spacer(),
-          // Panel toggles
-          _ToolbarButton(
-            icon: Icons.account_tree,
-            label: 'Hierarchy',
-            onPressed: onToggleHierarchy,
-          ),
+          ] else ...[
+            const SizedBox(width: 12),
+            _ToolbarButton(
+              icon: Icons.folder_open,
+              label: 'Open',
+              onPressed: onOpenFile,
+            ),
+          ],
           const SizedBox(width: 4),
-          _ToolbarButton(
-            icon: Icons.layers,
-            label: 'Layers',
-            onPressed: onToggleLayers,
-          ),
-          const SizedBox(width: 8),
           _buildSeparator(),
-          const SizedBox(width: 8),
-          // Notes toggle
-          _ToggleButton(
-            icon: Icons.note_alt,
-            label: 'Notes',
-            isActive: showNotes,
-            onPressed: onToggleNotes,
-          ),
-          if (currentView == 'schematic') ...[
-            const SizedBox(width: 8),
+          if (isPortrait) ...[
+            _IconButton(
+              icon: Icons.schema,
+              isActive: currentView == 'schematic',
+              onPressed: () => onViewChanged('schematic'),
+            ),
+            _IconButton(
+              icon: Icons.grid_4x4,
+              isActive: currentView == 'pcb',
+              onPressed: () => onViewChanged('pcb'),
+            ),
+            _IconButton(
+              icon: Icons.list_alt,
+              isActive: currentView == 'bom',
+              onPressed: () => onViewChanged('bom'),
+            ),
+          ] else ...[
+            _ViewButton(
+              label: 'Schematic',
+              icon: Icons.schema,
+              isActive: currentView == 'schematic',
+              onPressed: () => onViewChanged('schematic'),
+            ),
+            _ViewButton(
+              label: 'PCB',
+              icon: Icons.grid_4x4,
+              isActive: currentView == 'pcb',
+              onPressed: () => onViewChanged('pcb'),
+            ),
+            _ViewButton(
+              label: 'BOM',
+              icon: Icons.list_alt,
+              isActive: currentView == 'bom',
+              onPressed: () => onViewChanged('bom'),
+            ),
+          ],
+          const Spacer(),
+          if (currentView == 'pcb' && !isPortrait) ...[
+            _ToggleButton(
+              icon: Icons.refresh,
+              label: 'Refs',
+              isActive: showPcbRefs,
+              onPressed: onTogglePcbRefs ?? () {},
+            ),
+            const SizedBox(width: 2),
+            _ToolbarButton(
+              icon: Icons.flip_to_front,
+              label: 'Side',
+              onPressed: onTogglePcbSide ?? () {},
+            ),
+            const SizedBox(width: 2),
+            _ToolbarButton(
+              icon: Icons.flip,
+              label: 'Flip',
+              onPressed: onTogglePcbFlipped ?? () {},
+            ),
+            const SizedBox(width: 4),
             _buildSeparator(),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
+          ],
+          // Panel toggles (icons only in portrait)
+          if (isPortrait) ...[
+            _IconButton(
+              icon: Icons.account_tree,
+              isActive: false,
+              onPressed: onToggleHierarchy,
+            ),
+            _IconButton(
+              icon: Icons.layers,
+              isActive: false,
+              onPressed: onToggleLayers,
+            ),
+            _IconButton(
+              icon: Icons.note_alt,
+              isActive: showNotes,
+              onPressed: onToggleNotes,
+            ),
+          ] else ...[
+            _ToolbarButton(
+              icon: Icons.account_tree,
+              label: 'Hierarchy',
+              onPressed: onToggleHierarchy,
+            ),
+            const SizedBox(width: 2),
+            _ToolbarButton(
+              icon: Icons.layers,
+              label: 'Layers',
+              onPressed: onToggleLayers,
+            ),
+            const SizedBox(width: 4),
+            _buildSeparator(),
+            const SizedBox(width: 4),
+            _ToggleButton(
+              icon: Icons.note_alt,
+              label: 'Notes',
+              isActive: showNotes,
+              onPressed: onToggleNotes,
+            ),
+          ],
+          if (currentView == 'schematic' && !isPortrait) ...[
+            const SizedBox(width: 4),
+            _buildSeparator(),
+            const SizedBox(width: 4),
             _ToggleButton(
               icon: Icons.text_fields,
               label: 'Names',
               isActive: showNames,
               onPressed: onToggleNames,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             _ToggleButton(
               icon: Icons.numbers,
               label: 'Values',
@@ -134,6 +199,41 @@ class AppToolbar extends StatelessWidget {
       height: 24,
       margin: const EdgeInsets.symmetric(horizontal: 4),
       color: const Color(0xFF3D3D5C),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _IconButton({
+    required this.icon,
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 1),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor:
+              isActive ? const Color(0xFF6C5CE7) : Colors.white.withValues(alpha: 0.6),
+          backgroundColor:
+              isActive ? const Color(0xFF6C5CE7).withValues(alpha: 0.15) : null,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        child: Icon(icon, size: 18),
+      ),
     );
   }
 }

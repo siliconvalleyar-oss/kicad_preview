@@ -20,8 +20,11 @@ class AppState extends ChangeNotifier {
   String? _selectedElementId;
   bool _showHierarchy = true;
   bool _showLayers = true;
-  bool _showComponentNames = true;
-  bool _showComponentValues = true;
+  bool _showComponentNames = false;
+  bool _showComponentValues = false;
+  bool _showPcbRefs = false;
+  String _pcbSide = 'top'; // 'top' or 'bottom'
+  bool _pcbFlipped = false;
 
   // Schematic view state
   Offset _schematicOffset = Offset.zero;
@@ -30,6 +33,13 @@ class AppState extends ChangeNotifier {
   // PCB view state
   Offset _pcbOffset = Offset.zero;
   double _pcbScale = 1.0;
+
+  // Version counters for selective rebuilds
+  int _notesVersion = 0;
+  int _layersVersion = 0;
+
+  int get notesVersion => _notesVersion;
+  int get layersVersion => _layersVersion;
 
   // Getters
   Schematic? get schematic => _schematic;
@@ -44,6 +54,9 @@ class AppState extends ChangeNotifier {
   bool get showLayers => _showLayers;
   bool get showComponentNames => _showComponentNames;
   bool get showComponentValues => _showComponentValues;
+  bool get showPcbRefs => _showPcbRefs;
+  String get pcbSide => _pcbSide;
+  bool get pcbFlipped => _pcbFlipped;
   Offset get schematicOffset => _schematicOffset;
   double get schematicScale => _schematicScale;
   Offset get pcbOffset => _pcbOffset;
@@ -83,6 +96,10 @@ class AppState extends ChangeNotifier {
 
     try {
       _pcb = PCBParser.parse(content, fileName: fileName);
+      for (final layer in _pcb!.layers) {
+        layer.visible = true;
+      }
+      _layersVersion++;
       _currentFileName = fileName;
       _currentView = 'pcb';
       _pcbOffset = Offset.zero;
@@ -107,11 +124,21 @@ class AppState extends ChangeNotifier {
     if (_chatMode && id != null) {
       final ref = getSelectedElementRef();
       if (ref != null) {
-        // Auto-insert the reference; chat mode user then types their note after it
         _pendingRef = ref;
+        _notesVersion++;
       }
     }
+    if (id == null) {
+      _pendingRef = null;
+    }
     notifyListeners();
+  }
+
+  /// Consume and return the pending reference without triggering a rebuild.
+  String? consumePendingRef() {
+    final ref = _pendingRef;
+    _pendingRef = null;
+    return ref;
   }
 
   /// Toggle hierarchy panel.
@@ -136,6 +163,21 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void togglePcbRefs() {
+    _showPcbRefs = !_showPcbRefs;
+    notifyListeners();
+  }
+
+  void togglePcbSide() {
+    _pcbSide = _pcbSide == 'top' ? 'bottom' : 'top';
+    notifyListeners();
+  }
+
+  void togglePcbFlipped() {
+    _pcbFlipped = !_pcbFlipped;
+    notifyListeners();
+  }
+
   /// Toggle a PCB layer visibility.
   void toggleLayer(int layerId) {
     if (_pcb == null) return;
@@ -143,10 +185,51 @@ class AppState extends ChangeNotifier {
     for (final layer in layers) {
       if (layer.id == layerId) {
         layer.visible = !layer.visible;
+        _layersVersion++;
         notifyListeners();
         return;
       }
     }
+  }
+
+  /// Show all layers.
+  void showAllLayers() {
+    if (_pcb == null) return;
+    for (final layer in _pcb!.layers) {
+      layer.visible = true;
+    }
+    _layersVersion++;
+    notifyListeners();
+  }
+
+  /// Hide all layers.
+  void hideAllLayers() {
+    if (_pcb == null) return;
+    for (final layer in _pcb!.layers) {
+      layer.visible = false;
+    }
+    _layersVersion++;
+    notifyListeners();
+  }
+
+  /// Show only basic/common layers (copper, silkscreen, mask, paste, edge, fab, courtyard).
+  void showBasicLayers() {
+    if (_pcb == null) return;
+    const basicSet = <String>{
+      'F.Cu', 'B.Cu',
+      'F.SilkS', 'B.SilkS',
+      'F.Mask', 'B.Mask',
+      'F.Paste', 'B.Paste',
+      'Edge.Cuts',
+      'F.CrtYd', 'B.CrtYd',
+      'F.Fab', 'B.Fab',
+      'F.Adhes', 'B.Adhes',
+    };
+    for (final layer in _pcb!.layers) {
+      layer.visible = basicSet.contains(layer.name);
+    }
+    _layersVersion++;
+    notifyListeners();
   }
 
   /// Update schematic view transform.
@@ -250,12 +333,28 @@ class AppState extends ChangeNotifier {
 
   void toggleNotes() {
     _showNotes = !_showNotes;
-    if (_showNotes) _loadNotes();
+    if (_showNotes) {
+      _loadNotes();
+      if (_chatMode && _selectedElementId != null) {
+        final ref = getSelectedElementRef();
+        if (ref != null) {
+          _pendingRef = ref;
+          _notesVersion++;
+        }
+      }
+    }
     notifyListeners();
   }
 
   void toggleChatMode() {
     _chatMode = !_chatMode;
+    if (_chatMode && _selectedElementId != null) {
+      final ref = getSelectedElementRef();
+      if (ref != null) {
+        _pendingRef = ref;
+      }
+    }
+    _notesVersion++;
     notifyListeners();
   }
 
@@ -285,6 +384,7 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       _notes = [];
     }
+    _notesVersion++;
     notifyListeners();
   }
 
@@ -292,6 +392,7 @@ class AppState extends ChangeNotifier {
     if (text.trim().isEmpty) return;
     _notes.add(text.trim());
     _pendingRef = null;
+    _notesVersion++;
     notifyListeners();
     _saveNotes();
   }
@@ -314,6 +415,14 @@ class AppState extends ChangeNotifier {
       }
       await file.writeAsString(content.toString());
     } catch (_) {}
+  }
+
+  Future<void> clearNotes() async {
+    _notes.clear();
+    _notesVersion++;
+    _pendingRef = null;
+    notifyListeners();
+    _saveNotes();
   }
 
   Future<void> shareNotes() async {
@@ -348,6 +457,44 @@ class AppState extends ChangeNotifier {
       for (final fp in _pcb!.footprints) {
         if (fp.uuid == id) {
           return '[${_currentFileName.replaceAll('.kicad_pcb', '')}:${fp.reference}]';
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Returns a map of basic properties for the currently selected element.
+  Map<String, String>? get selectedElementProperties {
+    if (_selectedElementId == null) return null;
+    final id = _selectedElementId!;
+
+    if (_schematic != null) {
+      for (final el in _schematic!.elements) {
+        if (el.uuid == id) {
+          final props = <String, String>{
+            'Reference': el.text ?? '?',
+            'Value': el.properties['Value'] ?? '',
+          };
+          final fp = el.properties['Footprint'] ?? '';
+          if (fp.isNotEmpty) props['Footprint'] = fp;
+          final ds = el.properties['Datasheet'] ?? '';
+          if (ds.isNotEmpty) props['Datasheet'] = ds;
+          return props;
+        }
+      }
+    }
+
+    if (_pcb != null) {
+      for (final fp in _pcb!.footprints) {
+        if (fp.uuid == id) {
+          return <String, String>{
+            'Reference': fp.reference,
+            'Value': fp.value,
+            'Layer': fp.layer ?? 'N/A',
+            'Position': '(${fp.x.toStringAsFixed(2)}, ${fp.y.toStringAsFixed(2)})',
+            'Rotation': '${fp.rotation.toStringAsFixed(1)}°',
+          };
         }
       }
     }

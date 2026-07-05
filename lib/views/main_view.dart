@@ -10,7 +10,7 @@ import '../widgets/toolbar.dart';
 import '../widgets/hierarchy_panel.dart';
 import '../widgets/layer_panel.dart';
 import '../widgets/notes_panel.dart';
-import '../models/schematic.dart';
+import '../widgets/properties_panel.dart';
 import 'package:file_picker/file_picker.dart';
 
 // ignore: depend_on_referenced_packages
@@ -253,6 +253,10 @@ class _MainViewState extends State<MainView> {
                   showNames: appState.showComponentNames,
                   showValues: appState.showComponentValues,
                   showNotes: appState.showNotes,
+                  showPcbRefs: appState.showPcbRefs,
+                  onTogglePcbRefs: () => appState.togglePcbRefs(),
+                  onTogglePcbSide: () => appState.togglePcbSide(),
+                  onTogglePcbFlipped: () => appState.togglePcbFlipped(),
                 ),
                 Expanded(
                   child: Row(
@@ -272,7 +276,17 @@ class _MainViewState extends State<MainView> {
                           child: const LayerPanel(),
                         ),
                       Expanded(
-                        child: _buildCanvas(appState),
+                        child: Stack(
+                          children: [
+                            _buildCanvas(appState),
+                            if (appState.selectedElementId != null)
+                              const Positioned(
+                                left: 8,
+                                bottom: 8,
+                                child: PropertiesPanel(),
+                              ),
+                          ],
+                        ),
                       ),
                       if (appState.showNotes)
                         const NotesPanel(),
@@ -442,7 +456,7 @@ class _MainViewState extends State<MainView> {
           ],
           const Spacer(),
           Text(
-            'KiCad Preview v1.0.9',
+            'KiCad Preview v1.1.0',
             style: TextStyle(
               color: Colors.white.withAlpha(77),
               fontSize: 11,

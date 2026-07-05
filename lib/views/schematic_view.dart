@@ -162,6 +162,12 @@ class SchematicPainter extends CustomPainter {
     this.showValues = true,
   });
 
+  Color _selectionColor(String? id, Color base) {
+    if (selectedElementId == null) return base;
+    if (id == selectedElementId) return base;
+    return base.withValues(alpha: 0.2);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     _drawGrid(canvas, size);
@@ -172,7 +178,7 @@ class SchematicPainter extends CustomPainter {
       final paint = Paint()
         ..color = isSelected
             ? const Color(0xFF6C5CE7)
-            : const Color(0xFF4A90D9)
+            : _selectionColor(wire.uuid, const Color(0xFF4A90D9))
         ..strokeWidth = (wire.width > 0 ? wire.width : 0.3) * 4
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
@@ -198,7 +204,7 @@ class SchematicPainter extends CustomPainter {
       final paint = Paint()
         ..color = isSelected
             ? const Color(0xFF6C5CE7)
-            : const Color(0xFFE74C3C)
+            : _selectionColor(junction.uuid, const Color(0xFFE74C3C))
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(
@@ -319,7 +325,7 @@ class SchematicPainter extends CustomPainter {
       final bodyPaint = Paint()
         ..color = isSelected
             ? const Color(0xFF6C5CE7)
-            : const Color(0xFF8E44AD)
+            : _selectionColor(element.uuid, const Color(0xFF8E44AD))
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke;
 

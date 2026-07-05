@@ -7,10 +7,10 @@ class HierarchyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
+    final currentName = context.select<AppState, String>((s) => s.currentFileName);
+    final appState = context.read<AppState>();
     final sheets = appState.sheets;
     final rootName = appState.rootFileName;
-    final currentName = appState.currentFileName;
     final isRoot = currentName == rootName || currentName.isEmpty;
 
     return Container(

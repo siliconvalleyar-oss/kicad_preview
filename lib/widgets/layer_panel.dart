@@ -7,7 +7,8 @@ class LayerPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
+    context.select<AppState, int>((s) => s.layersVersion);
+    final appState = context.read<AppState>();
     final pcb = appState.pcb;
     if (pcb == null) return const SizedBox.shrink();
 
@@ -36,25 +37,49 @@ class LayerPanel extends StatelessWidget {
                 bottom: BorderSide(color: Color(0xFF3D3D5C)),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.layers, size: 16, color: Color(0xFF6C5CE7)),
-                const SizedBox(width: 8),
-                Text(
-                  'Layers',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.layers, size: 16, color: Color(0xFF6C5CE7)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Layers',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${pcb.layers.length}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                Text(
-                  '${pcb.layers.length}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 11,
-                  ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    _ActionChip(
+                      label: 'Basic',
+                      onTap: () => appState.showBasicLayers(),
+                    ),
+                    const SizedBox(width: 4),
+                    _ActionChip(
+                      label: 'All',
+                      onTap: () => appState.showAllLayers(),
+                    ),
+                    const SizedBox(width: 4),
+                    _ActionChip(
+                      label: 'None',
+                      onTap: () => appState.hideAllLayers(),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -101,6 +126,39 @@ class LayerPanel extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF6C5CE7).withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: const Color(0xFF6C5CE7).withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: const Color(0xFF6C5CE7).withValues(alpha: 0.9),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

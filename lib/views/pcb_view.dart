@@ -86,7 +86,12 @@ class _PCBViewState extends State<PCBView> {
 
   @override
   Widget build(BuildContext context) {
-    return InteractiveViewer(
+    final appState = context.watch<AppState>();
+    final side = appState.pcbSide;
+    final flipped = appState.pcbFlipped;
+    final showRefs = appState.showPcbRefs;
+
+    Widget content = InteractiveViewer(
       transformationController: _transformController,
       boundaryMargin: const EdgeInsets.all(double.infinity),
       minScale: 0.1,
@@ -104,22 +109,59 @@ class _PCBViewState extends State<PCBView> {
           child: CustomPaint(
             painter: PCBPainter(
               pcb: widget.pcb,
-              selectedElementId:
-                  context.watch<AppState>().selectedElementId,
+              selectedElementId: appState.selectedElementId,
+              pcbSide: side,
+              showPcbRefs: showRefs,
             ),
             size: const Size(2000, 2000),
           ),
         ),
       ),
     );
+
+    if (flipped) {
+      content = RotatedBox(quarterTurns: 2, child: content);
+    }
+
+    return content;
   }
 }
 
 class PCBPainter extends CustomPainter {
   final PCB pcb;
   final String? selectedElementId;
+  final String pcbSide;
+  final bool showPcbRefs;
 
-  PCBPainter({required this.pcb, this.selectedElementId});
+  PCBPainter({
+    required this.pcb,
+    this.selectedElementId,
+    this.pcbSide = 'top',
+    this.showPcbRefs = false,
+  });
+
+  bool _isBottomSide(String layerName) {
+    return layerName.startsWith('B.');
+  }
+
+  double _sideOpacity(String layerName) {
+    final onBottom = _isBottomSide(layerName);
+    if (pcbSide == 'top') {
+      return onBottom ? 0.4 : 1.0;
+    } else {
+      return onBottom ? 1.0 : 0.4;
+    }
+  }
+
+  Color _selectionColor(String? id, Color base, {String layer = ''}) {
+    double alpha = 1.0;
+    if (selectedElementId != null) {
+      if (id != selectedElementId) alpha = 0.2;
+    }
+    alpha *= _sideOpacity(layer);
+    if (alpha >= 1.0) return base;
+    return base.withValues(alpha: alpha);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -130,8 +172,9 @@ class PCBPainter extends CustomPainter {
       final layer = pcb.getLayerById(_layerNameToId(line.layer));
       if (layer != null && !layer.visible) continue;
 
+      final baseColor = _getLayerColor(line.layer);
       final paint = Paint()
-        ..color = _getLayerColor(line.layer)
+        ..color = _selectionColor(null, baseColor, layer: line.layer)
         ..strokeWidth = line.width * 10
         ..style = PaintingStyle.stroke;
 
@@ -148,10 +191,11 @@ class PCBPainter extends CustomPainter {
       if (layer != null && !layer.visible) continue;
 
       final isSelected = track.uuid == selectedElementId;
+      final baseColor = _getLayerColor(track.layer);
       final paint = Paint()
         ..color = isSelected
             ? const Color(0xFF6C5CE7)
-            : _getLayerColor(track.layer)
+            : _selectionColor(track.uuid, baseColor, layer: track.layer)
         ..strokeWidth = track.width * 10
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
@@ -195,11 +239,11 @@ class PCBPainter extends CustomPainter {
 
     // Draw footprints
     for (final fp in pcb.footprints) {
-      _drawFootprint(canvas, fp);
+      _drawFootprint(canvas, fp, fp.uuid == selectedElementId);
     }
   }
 
-  void _drawFootprint(Canvas canvas, PCBFootprint fp) {
+  void _drawFootprint(Canvas canvas, PCBFootprint fp, bool isSelected) {
     final offset = Offset(fp.x * 10, fp.y * 10);
     final fpLayer = fp.layer != null
         ? pcb.getLayerById(_layerNameToId(fp.layer!))
@@ -208,6 +252,8 @@ class PCBPainter extends CustomPainter {
 
     if (!fpVisible) return;
 
+    final dimColor = !isSelected && selectedElementId != null;
+
     // Draw pads
     for (final pad in fp.pads) {
       final layer = pad.layers.isNotEmpty
@@ -215,8 +261,12 @@ class PCBPainter extends CustomPainter {
           : null;
       if (layer != null && !layer.visible) continue;
 
+      final padLayerName = pad.layers.isNotEmpty ? pad.layers.first : 'F.Cu';
+      final baseColor = const Color(0xFFC0C0C0);
+      final sideAlpha = _sideOpacity(padLayerName);
+      final paintAlpha = dimColor ? 0.2 * sideAlpha : sideAlpha;
       final paint = Paint()
-        ..color = const Color(0xFFC0C0C0)
+        ..color = baseColor.withValues(alpha: paintAlpha.clamp(0.0, 1.0))
         ..style = PaintingStyle.fill;
 
       final rect = Rect.fromCenter(
@@ -252,8 +302,11 @@ class PCBPainter extends CustomPainter {
       final layer = pcb.getLayerById(_layerNameToId(line.layer));
       if (layer != null && !layer.visible) continue;
 
+      final baseColor = _getLayerColor(line.layer);
+      final sideAlpha = _sideOpacity(line.layer);
+      final paintAlpha = dimColor ? 0.2 * sideAlpha : sideAlpha;
       final paint = Paint()
-        ..color = _getLayerColor(line.layer)
+        ..color = baseColor.withValues(alpha: paintAlpha.clamp(0.0, 1.0))
         ..strokeWidth = line.width * 10
         ..style = PaintingStyle.stroke;
 
@@ -269,11 +322,13 @@ class PCBPainter extends CustomPainter {
       final layer = pcb.getLayerById(_layerNameToId(text.layer));
       if (layer != null && !layer.visible) continue;
 
+      final sideAlpha = _sideOpacity(text.layer);
+      final textAlpha = dimColor ? 0.15 * sideAlpha : 0.4 * sideAlpha;
       final textPainter = TextPainter(
         text: TextSpan(
           text: text.text,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withValues(alpha: textAlpha.clamp(0.0, 1.0)),
             fontSize: text.size * 8,
           ),
         ),
@@ -286,14 +341,15 @@ class PCBPainter extends CustomPainter {
       );
     }
 
-    // Draw reference text (always on F.SilkS)
-    final refLayer = pcb.getLayerById(_layerNameToId('F.SilkS'));
-    if (refLayer == null || refLayer.visible) {
+    // Draw reference text (user-toggleable)
+    if (showPcbRefs) {
+      final sideAlpha = _sideOpacity('F.SilkS');
+      final refAlpha = dimColor ? 0.15 * sideAlpha : 0.4 * sideAlpha;
       final textPainter = TextPainter(
         text: TextSpan(
           text: fp.reference,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withValues(alpha: refAlpha.clamp(0.0, 1.0)),
             fontSize: 8,
           ),
         ),
@@ -319,11 +375,7 @@ class PCBPainter extends CustomPainter {
   }
 
   Color _getLayerColor(String layerName) {
-    for (final layer in pcb.layers) {
-      if (layer.name == layerName) {
-        return layer.color;
-      }
-    }
+    // Check hardcoded named colors first (avoids old ID mismatch in v7+ files)
     switch (layerName) {
       case 'F.Cu':
         return const Color(0xFFFF4444);
@@ -348,6 +400,14 @@ class PCBPainter extends CustomPainter {
       case 'B.CrtYd':
         return const Color(0xFF333333);
       default:
+        // Fallback to layer color from file (may be black for unmapped IDs)
+        for (final layer in pcb.layers) {
+          if (layer.name == layerName) {
+            final c = layer.color;
+            if (c != const Color(0xFF000000)) return c;
+            break;
+          }
+        }
         return const Color(0xFF555555);
     }
   }
@@ -362,6 +422,8 @@ class PCBPainter extends CustomPainter {
   @override
   bool shouldRepaint(PCBPainter oldDelegate) {
     return oldDelegate.pcb != pcb ||
-        oldDelegate.selectedElementId != selectedElementId;
+        oldDelegate.selectedElementId != selectedElementId ||
+        oldDelegate.pcbSide != pcbSide ||
+        oldDelegate.showPcbRefs != showPcbRefs;
   }
 }
