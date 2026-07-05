@@ -16,12 +16,12 @@ class BomView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.inventory_2_outlined,
-                size: 64, color: Colors.white.withOpacity(0.3)),
+                size: 64, color: Colors.white.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             Text(
               'No components found',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 16,
               ),
             ),
@@ -48,7 +48,7 @@ class BomView extends StatelessWidget {
               Text(
                 'Bill of Materials',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -57,7 +57,7 @@ class BomView extends StatelessWidget {
               Text(
                 '${items.length} items',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 13,
                 ),
               ),
@@ -137,7 +137,7 @@ class BomView extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withValues(alpha: 0.8),
           fontSize: 12,
         ),
         overflow: TextOverflow.ellipsis,

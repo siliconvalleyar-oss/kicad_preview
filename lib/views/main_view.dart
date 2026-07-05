@@ -10,7 +10,10 @@ import '../widgets/hierarchy_panel.dart';
 import '../widgets/layer_panel.dart';
 import '../models/schematic.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
+
+// Conditional import for native file reading
+// ignore: depend_on_referenced_packages
+import 'dart:convert' show utf8;
 
 class MainView extends StatefulWidget {
   const MainView({super.key});
@@ -57,6 +60,7 @@ class _MainViewState extends State<MainView> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['kicad_sch', 'kicad_pcb'],
+      withData: true,
     );
 
     if (result != null && result.files.isNotEmpty) {
@@ -64,7 +68,13 @@ class _MainViewState extends State<MainView> {
       final appState = context.read<AppState>();
 
       try {
-        final content = await File(file.path!).readAsString();
+        String content;
+        if (file.bytes != null) {
+          content = utf8.decode(file.bytes!);
+        } else {
+          content = '';
+        }
+
         final fileName = file.name;
 
         if (fileName.endsWith('.kicad_sch')) {

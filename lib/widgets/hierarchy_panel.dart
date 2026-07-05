@@ -38,7 +38,7 @@ class HierarchyPanel extends StatelessWidget {
                 Text(
                   'Hierarchy',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -105,7 +105,7 @@ class _SheetItem extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF6C5CE7).withOpacity(0.15)
+              ? const Color(0xFF6C5CE7).withValues(alpha: 0.15)
               : null,
           border: const Border(
             bottom: BorderSide(color: Color(0xFF3D3D5C), width: 0.5),
@@ -128,7 +128,7 @@ class _SheetItem extends StatelessWidget {
                   Text(
                     name,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 12,
                       fontWeight: isRoot ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -138,7 +138,7 @@ class _SheetItem extends StatelessWidget {
                     Text(
                       fileName!,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontSize: 10,
                       ),
                       overflow: TextOverflow.ellipsis,

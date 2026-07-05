@@ -115,7 +115,7 @@ class _ToolbarButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: Colors.white.withOpacity(0.8),
+        foregroundColor: Colors.white.withValues(alpha: 0.8),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -153,9 +153,9 @@ class _ViewButton extends StatelessWidget {
         onPressed: onPressed,
         style: TextButton.styleFrom(
           foregroundColor:
-              isActive ? const Color(0xFF6C5CE7) : Colors.white.withOpacity(0.6),
+              isActive ? const Color(0xFF6C5CE7) : Colors.white.withValues(alpha: 0.6),
           backgroundColor:
-              isActive ? const Color(0xFF6C5CE7).withOpacity(0.15) : null,
+              isActive ? const Color(0xFF6C5CE7).withValues(alpha: 0.15) : null,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

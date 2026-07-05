@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../controllers/app_state.dart';
 import 'main_view.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -87,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen>
                   'Schematic & PCB Viewer',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     letterSpacing: 0.5,
                   ),
                 ),

@@ -6,8 +6,10 @@ plugins {
 
 android {
     namespace = "com.kicadpreview.kicad_preview"
-    compileSdk = flutter.compileSdkVersion
+    // Pin compileSdk to 36 for flutter_plugin_android_lifecycle compatibility
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

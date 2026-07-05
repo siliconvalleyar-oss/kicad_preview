@@ -43,7 +43,7 @@ class LayerPanel extends StatelessWidget {
                 Text(
                   'Layers',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -52,7 +52,7 @@ class LayerPanel extends StatelessWidget {
                 Text(
                   '${pcb.layers.length}',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 11,
                   ),
                 ),
@@ -97,7 +97,7 @@ class LayerPanel extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
           fontSize: 10,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -135,11 +135,11 @@ class _LayerItem extends StatelessWidget {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: visible ? color.withOpacity(0.3) : Colors.transparent,
+                color: visible ? color.withValues(alpha: 0.3) : Colors.transparent,
                 border: Border.all(
                   color: visible
                       ? color
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
                 borderRadius: BorderRadius.circular(3),
@@ -164,7 +164,7 @@ class _LayerItem extends StatelessWidget {
               child: Text(
                 name,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(visible ? 0.9 : 0.4),
+                  color: Colors.white.withValues(alpha: visible ? 0.9 : 0.4),
                   fontSize: 12,
                 ),
                 overflow: TextOverflow.ellipsis,

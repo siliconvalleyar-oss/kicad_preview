@@ -196,7 +196,6 @@ class SchematicParser {
 
     // Extract BOM info from symbol instances
     for (final symbol in SExprParser.findAll(root, 'symbol')) {
-      final libSymbol = SExprParser.findFirst(symbol, 'lib_symbol');
       String reference = '';
       String value = '';
       for (final prop in SExprParser.findAll(symbol, 'property')) {
