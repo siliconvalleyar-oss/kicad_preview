@@ -228,16 +228,18 @@ class PCBParser {
       ));
     }
 
-    // Parse tracks
+    // Parse tracks (KiCad v7+ uses 'segment'; legacy used 'track')
     final tracks = <PCBTrack>[];
-    for (final track in SExprParser.findAll(root, 'track')) {
+    for (final track
+        in [...SExprParser.findAll(root, 'segment'), ...SExprParser.findAll(root, 'track')]) {
       final start = SExprParser.findFirst(track, 'start');
       final end = SExprParser.findFirst(track, 'end');
       final trackLayer = SExprParser.getStringValue(track, 'layer') ?? 'F.Cu';
       final trackWidth = double.tryParse(
           SExprParser.getStringValue(track, 'width') ?? '0.25') ?? 0.25;
       final net = SExprParser.getStringValue(track, 'net');
-      final uuid = SExprParser.getStringValue(track, 'uuid');
+      final uuid = SExprParser.getStringValue(track, 'uuid') ??
+          SExprParser.getStringValue(track, 'tstamp');
       double x1 = 0, y1 = 0, x2 = 0, y2 = 0;
       if (start != null && start.length >= 3) {
         x1 = double.tryParse(start[1].toString()) ?? 0;

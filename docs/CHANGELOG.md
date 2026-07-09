@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2026-07-09
+### Fixed
+- PCB tracks not rendered: parser only matched legacy `(track ...)`; now also parses KiCad v7+ `(segment ...)` and reads `tstamp` as UUID
+- Internal copper layers (In1.Cu, In2.Cu) now use correct colors in `_getLayerColor`
+
 ## [1.1.0] - 2026-07-05
 ### Added
 - Layer panel presets: Show Basic, All, None

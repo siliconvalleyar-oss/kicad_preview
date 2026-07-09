@@ -379,6 +379,10 @@ class PCBPainter extends CustomPainter {
     switch (layerName) {
       case 'F.Cu':
         return const Color(0xFFFF4444);
+      case 'In1.Cu':
+        return const Color(0xFF44FF44);
+      case 'In2.Cu':
+        return const Color(0xFFAA44FF);
       case 'B.Cu':
         return const Color(0xFF4488FF);
       case 'F.SilkS':
