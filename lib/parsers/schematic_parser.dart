@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/schematic.dart';
 import '../models/schematic_element.dart';
@@ -27,39 +28,145 @@ class SchematicParser {
     final wires = <Wire>[];
     final texts = <SchematicText>[];
 
-    // Parse lib_symbols to get body dimensions
+    // Parse lib_symbols: collect rectangles + pins (recursively through
+    // nested alias symbols, since SExprParser helpers are not recursive)
+    // and compute each symbol's real body bounding box from its pin
+    // positions, so the drawn body matches the designed size.
     final symbolBodies = <String, List<RectDim>>{};
+    final symbolPins = <String, List<SchematicPin>>{};
+
+    final symNodes = <String, List<dynamic>>{};
     for (final libSymbols in SExprParser.findAll(root, 'lib_symbols')) {
-      for (final symEntry in libSymbols) {
-        if (symEntry is List<dynamic> && symEntry.length >= 2 && symEntry[0] == 'symbol') {
-          final libId = symEntry[1].toString();
-          if (libId.isEmpty) continue;
-          final rects = <RectDim>[];
-          for (final item in symEntry) {
-            if (item is List<dynamic> && item.length >= 2 && item[0] == 'rectangle') {
-              final start = SExprParser.findFirst(item, 'start');
-              final end = SExprParser.findFirst(item, 'end');
-              if (start != null && end != null && start.length >= 3 && end.length >= 3) {
-                final x1 = double.tryParse(start[1].toString()) ?? 0;
-                final y1 = double.tryParse(start[2].toString()) ?? 0;
-                final x2 = double.tryParse(end[1].toString()) ?? 0;
-                final y2 = double.tryParse(end[2].toString()) ?? 0;
-                rects.add(RectDim(
-                  (x1 + x2) / 2,
-                  (y1 + y2) / 2,
-                  (x2 - x1).abs(),
-                  (y2 - y1).abs(),
-                ));
-              }
-            }
-          }
-          if (rects.isNotEmpty) {
-            symbolBodies[libId] = rects;
-          }
+      // libSymbols is the (lib_symbols ...) node; iterate its children.
+      for (final child in libSymbols) {
+        if (child is List<dynamic> &&
+            child.length >= 2 &&
+            child[0] == 'symbol') {
+          final name = child[1].toString();
+          if (name.isNotEmpty) symNodes[name] = child;
         }
       }
     }
 
+    void collectGeometry(
+      List<dynamic> node,
+      List<RectDim> rects,
+      List<SchematicPin> pins,
+    ) {
+      for (final item in node) {
+        if (item is! List<dynamic> || item.isEmpty) continue;
+        final t = item[0].toString();
+        if (t == 'rectangle') {
+          final start = SExprParser.findFirst(item, 'start');
+          final end = SExprParser.findFirst(item, 'end');
+          if (start != null &&
+              end != null &&
+              start.length >= 3 &&
+              end.length >= 3) {
+            final rx1 = double.tryParse(start[1].toString()) ?? 0;
+            final ry1 = double.tryParse(start[2].toString()) ?? 0;
+            final rx2 = double.tryParse(end[1].toString()) ?? 0;
+            final ry2 = double.tryParse(end[2].toString()) ?? 0;
+            rects.add(RectDim(
+              (rx1 + rx2) / 2,
+              (ry1 + ry2) / 2,
+              (rx2 - rx1).abs(),
+              (ry2 - ry1).abs(),
+            ));
+          }
+        } else if (t == 'pin') {
+          final at = SExprParser.findFirst(item, 'at');
+          if (at != null && at.length >= 3) {
+            final px = double.tryParse(at[1].toString()) ?? 0;
+            final py = double.tryParse(at[2].toString()) ?? 0;
+            final angle = at.length > 3
+                ? double.tryParse(at[3].toString()) ?? 0.0
+                : 0.0;
+            final length = double.tryParse(
+                    SExprParser.getStringValue(item, 'length') ?? '0') ??
+                0.0;
+            final number = SExprParser.findFirst(item, 'number');
+            final name = SExprParser.findFirst(item, 'name');
+            pins.add(SchematicPin(
+              x: px,
+              y: py,
+              angle: angle,
+              length: length,
+              number: number != null && number.length > 1
+                  ? number[1].toString()
+                  : '',
+              name: name != null && name.length > 1
+                  ? name[1].toString()
+                  : '',
+            ));
+          }
+        }
+        // Descend into all sublists (covers nested alias symbols).
+        collectGeometry(item, rects, pins);
+      }
+    }
+
+    RectDim? bboxFromGeometry(
+      List<RectDim> rects,
+      List<SchematicPin> pins,
+    ) {
+      double minX = double.infinity,
+          minY = double.infinity,
+          maxX = double.negativeInfinity,
+          maxY = double.negativeInfinity;
+      var found = false;
+      void expand(double x, double y) {
+        found = true;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+
+      for (final r in rects) {
+        expand(r.x - r.w / 2, r.y - r.h / 2);
+        expand(r.x + r.w / 2, r.y + r.h / 2);
+      }
+      for (final p in pins) {
+        final rad = p.angle * pi / 180;
+        final tx = p.x + p.length * cos(rad);
+        final ty = p.y + p.length * sin(rad);
+        // Expand by the pin BASE (inner end, near the body) only.
+        // The pin TIP (at = p.x,p.y, outer connection point) is left
+        // out so pins stick out of the body as designed.
+        expand(tx, ty);
+      }
+
+      if (!found) return null;
+      const pad = 0.5; // small margin around geometry
+      return RectDim(
+        (minX + maxX) / 2,
+        (minY + maxY) / 2,
+        (maxX - minX).abs() + pad * 2,
+        (maxY - minY).abs() + pad * 2,
+      );
+    }
+
+    for (final entry in symNodes.entries) {
+      final rects = <RectDim>[];
+      final pins = <SchematicPin>[];
+      var node = entry.value;
+      // If the symbol extends a base, merge the base geometry too.
+      final extendsVal = SExprParser.getStringValue(node, 'extends');
+      if (extendsVal != null &&
+          extendsVal.isNotEmpty &&
+          symNodes.containsKey(extendsVal)) {
+        collectGeometry(symNodes[extendsVal]!, rects, pins);
+      }
+      collectGeometry(node, rects, pins);
+
+      final name = entry.key;
+      // Power symbols keep their dedicated (GND/arrow) rendering.
+      if (name.startsWith('power:')) continue;
+      final bbox = bboxFromGeometry(rects, pins);
+      if (bbox != null) symbolBodies[name] = [bbox];
+      if (pins.isNotEmpty) symbolPins[name] = pins;
+    }
     // Parse wires
     for (final wire in SExprParser.findAll(root, 'wire')) {
       final pts = SExprParser.findFirst(wire, 'pts');
@@ -97,6 +204,21 @@ class SchematicParser {
         junctions.add(Junction(position: Point(x, y), uuid: uuid));
         elements.add(SchematicElement(
           type: SchematicElementType.junction,
+          points: [Point(x, y)],
+          uuid: uuid,
+        ));
+      }
+    }
+
+    // Parse no-connect (connectivity) markers
+    for (final nc in SExprParser.findAll(root, 'no_connect')) {
+      final at = SExprParser.findFirst(nc, 'at');
+      if (at != null && at.length >= 3) {
+        final x = double.tryParse(at[1].toString()) ?? 0;
+        final y = double.tryParse(at[2].toString()) ?? 0;
+        final uuid = SExprParser.getStringValue(nc, 'uuid');
+        elements.add(SchematicElement(
+          type: SchematicElementType.noConnect,
           points: [Point(x, y)],
           uuid: uuid,
         ));
@@ -275,6 +397,7 @@ class SchematicParser {
           text: reference,
           textSize: 1.27,
           uuid: uuid,
+          symbolPins: symbolPins[libId] ?? const [],
           properties: {
             'Reference': reference,
             'Value': value,
@@ -299,6 +422,7 @@ class SchematicParser {
       wires: wires,
       texts: texts,
       symbolBodies: symbolBodies,
+      symbolPins: symbolPins,
     );
   }
 

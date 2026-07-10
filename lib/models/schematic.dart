@@ -20,6 +20,7 @@ class Schematic {
   final List<Wire> wires;
   final List<SchematicText> texts;
   final Map<String, List<RectDim>> symbolBodies;
+  final Map<String, List<SchematicPin>> symbolPins;
 
   const Schematic({
     required this.fileName,
@@ -32,6 +33,7 @@ class Schematic {
     this.wires = const [],
     this.texts = const [],
     this.symbolBodies = const {},
+    this.symbolPins = const {},
   });
 }
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2] - 2026-07-09
+### Fixed
+- Schematic symbol bodies now sized from real geometry: `SExprParser.findFirst`/`findAll` are NOT recursive, so collect rectangles/pins by walking nested alias symbols manually; body bbox uses pin bases (inner) so pins stick out
+- Schematic pins now drawn; `no_connect` (connectivity) markers parsed and drawn as "X"
+- PCB curved tracks `(arc ...)` parsed via quadratic Bezier (circumcenter was unstable for near-straight arcs -> invisible board); UV coords now bounded
+- Through-hole pads: circular `(size d)` single-value parsed; circular pads drawn as real circles; thru-hole pads (`*.Cu`) rendered on both F.Cu and B.Cu like KiCad
+- Added "Center PCB" button (centerView on visible layers only)
+
 ## [1.1.1] - 2026-07-09
 ### Fixed
 - PCB tracks not rendered: parser only matched legacy `(track ...)`; now also parses KiCad v7+ `(segment ...)` and reads `tstamp` as UUID

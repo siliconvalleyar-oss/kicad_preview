@@ -35,6 +35,7 @@ class MainView extends StatefulWidget {
 
 class _MainViewState extends State<MainView> {
   Timer? _panelTimer;
+  final GlobalKey<PCBViewState> _pcbKey = GlobalKey<PCBViewState>();
 
   @override
   void initState() {
@@ -257,6 +258,7 @@ class _MainViewState extends State<MainView> {
                   onTogglePcbRefs: () => appState.togglePcbRefs(),
                   onTogglePcbSide: () => appState.togglePcbSide(),
                   onTogglePcbFlipped: () => appState.togglePcbFlipped(),
+                  onCenterPCB: () => _pcbKey.currentState?.centerView(),
                 ),
                 Expanded(
                   child: Row(
@@ -354,7 +356,7 @@ class _MainViewState extends State<MainView> {
           return _buildEmptyState('No PCB loaded');
         }
         return PCBView(
-          key: ValueKey('pcb_${appState.currentFileName}'),
+          key: _pcbKey,
           pcb: appState.pcb!,
         );
       case 'bom':

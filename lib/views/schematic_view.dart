@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/schematic.dart';
@@ -214,6 +215,25 @@ class SchematicPainter extends CustomPainter {
       );
     }
 
+    // Draw no-connect (connectivity) markers as a small "X"
+    for (final element in schematic.elements) {
+      if (element.type != SchematicElementType.noConnect) continue;
+      if (element.points.isEmpty) continue;
+      final p = element.points.first;
+      final cx = p.x * 4;
+      final cy = p.y * 4;
+      final isSelected = element.uuid == selectedElementId;
+      final paint = Paint()
+        ..color = isSelected
+            ? const Color(0xFF6C5CE7)
+            : const Color(0xFFE74C3C)
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke;
+      const r = 3.0;
+      canvas.drawLine(Offset(cx - r, cy - r), Offset(cx + r, cy + r), paint);
+      canvas.drawLine(Offset(cx - r, cy + r), Offset(cx + r, cy - r), paint);
+    }
+
     // Draw sheets (hierarchical blocks)
     for (final sheet in schematic.sheets) {
       final paint = Paint()
@@ -393,6 +413,33 @@ class SchematicPainter extends CustomPainter {
             const Radius.circular(2),
           ),
           bodyPaint,
+        );
+      }
+
+      // Draw pins (positions parsed from lib_symbols). Pin 'at' is the
+      // connection point; it extends 'length' in the pin direction.
+      final pinPaint = Paint()
+        ..color = isSelected
+            ? const Color(0xFF6C5CE7)
+            : _selectionColor(element.uuid, const Color(0xFFCFCFE8))
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke;
+      for (final pin in element.symbolPins) {
+        final rad = pin.angle * pi / 180;
+        final bx = cx + pin.x * 4;
+        final by = cy + pin.y * 4;
+        final tx = cx + (pin.x + pin.length * cos(rad)) * 4;
+        final ty = cy + (pin.y + pin.length * sin(rad)) * 4;
+        canvas.drawLine(Offset(bx, by), Offset(tx, ty), pinPaint);
+        // Connection point marker at 'at'
+        canvas.drawCircle(
+          Offset(bx, by),
+          1.6,
+          Paint()
+            ..color = isSelected
+                ? const Color(0xFF6C5CE7)
+                : const Color(0xFFCFCFE8)
+            ..style = PaintingStyle.fill,
         );
       }
 

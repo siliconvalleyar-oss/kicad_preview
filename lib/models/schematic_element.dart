@@ -32,6 +32,7 @@ class SchematicElement {
   final String? sheetName;
   final String? sheetFile;
   final List<SheetPin> pins;
+  final List<SchematicPin> symbolPins;
   final Map<String, String> properties;
 
   const SchematicElement({
@@ -46,6 +47,7 @@ class SchematicElement {
     this.sheetName,
     this.sheetFile,
     this.pins = const [],
+    this.symbolPins = const [],
     this.properties = const {},
   });
 
@@ -61,6 +63,7 @@ class SchematicElement {
     String? sheetName,
     String? sheetFile,
     List<SheetPin>? pins,
+    List<SchematicPin>? symbolPins,
     Map<String, String>? properties,
   }) {
     return SchematicElement(
@@ -75,9 +78,28 @@ class SchematicElement {
       sheetName: sheetName ?? this.sheetName,
       sheetFile: sheetFile ?? this.sheetFile,
       pins: pins ?? this.pins,
+      symbolPins: symbolPins ?? this.symbolPins,
       properties: properties ?? this.properties,
     );
   }
+}
+
+class SchematicPin {
+  final double x;
+  final double y;
+  final double angle;
+  final double length;
+  final String number;
+  final String name;
+
+  const SchematicPin({
+    required this.x,
+    required this.y,
+    this.angle = 0,
+    this.length = 0,
+    this.number = '',
+    this.name = '',
+  });
 }
 
 class SheetPin {

@@ -10,53 +10,71 @@ class PCBView extends StatefulWidget {
   const PCBView({super.key, required this.pcb});
 
   @override
-  State<PCBView> createState() => _PCBViewState();
+  State<PCBView> createState() => PCBViewState();
+
 }
 
-class _PCBViewState extends State<PCBView> {
+class PCBViewState extends State<PCBView> {
   final TransformationController _transformController =
       TransformationController();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _centerView());
+    WidgetsBinding.instance.addPostFrameCallback((_) => centerView());
   }
 
-  void _centerView() {
+  bool _isLayerVisible(String layerName) {
+    final id = _layerNameToId(layerName);
+    final layer = widget.pcb.getLayerById(id);
+    return layer == null || layer.visible;
+  }
+
+  int _layerNameToId(String name) {
+    for (final layer in widget.pcb.layers) {
+      if (layer.name == name) return layer.id;
+    }
+    return 0;
+  }
+
+  /// Center the view on the union of all VISIBLE layers' geometry.
+  void centerView() {
     final size = context.size;
     if (size == null) return;
 
     double minX = double.infinity, minY = double.infinity;
     double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
 
+    void expand(double x, double y) {
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+
     for (final track in widget.pcb.tracks) {
-      for (final p in [Offset(track.x1, track.y1), Offset(track.x2, track.y2)]) {
-        final x = p.dx * 10;
-        final y = p.dy * 10;
-        if (x < minX) minX = x; if (y < minY) minY = y;
-        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
-      }
+      if (!_isLayerVisible(track.layer)) continue;
+      expand(track.x1 * 10, track.y1 * 10);
+      expand(track.x2 * 10, track.y2 * 10);
     }
     for (final via in widget.pcb.vias) {
-      final x = via.x * 10;
-      final y = via.y * 10;
-      if (x < minX) minX = x; if (y < minY) minY = y;
-      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      final vLayer = via.layers.isNotEmpty ? via.layers.first : 'F.Cu';
+      if (!_isLayerVisible(vLayer)) continue;
+      expand(via.x * 10, via.y * 10);
     }
     for (final fp in widget.pcb.footprints) {
-      final x = fp.x * 10;
-      final y = fp.y * 10;
-      if (x < minX) minX = x; if (y < minY) minY = y;
-      if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      if (fp.layer != null && !_isLayerVisible(fp.layer!)) continue;
+      expand(fp.x * 10, fp.y * 10);
+      for (final pad in fp.pads) {
+        final pLayer = pad.layers.isNotEmpty ? pad.layers.first : 'F.Cu';
+        if (!_isLayerVisible(pLayer)) continue;
+        expand(pad.x * 10 + fp.x * 10, pad.y * 10 + fp.y * 10);
+      }
     }
     for (final line in widget.pcb.graphicalLines) {
-      for (final p in [Offset(line.x1, line.y1), Offset(line.x2, line.y2)]) {
-        final x = p.dx * 10;
-        final y = p.dy * 10;
-        if (x < minX) minX = x; if (y < minY) minY = y;
-        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
-      }
+      if (!_isLayerVisible(line.layer)) continue;
+      expand(line.x1 * 10, line.y1 * 10);
+      expand(line.x2 * 10, line.y2 * 10);
     }
 
     if (minX == double.infinity) return;
@@ -262,38 +280,51 @@ class PCBPainter extends CustomPainter {
       if (layer != null && !layer.visible) continue;
 
       final padLayerName = pad.layers.isNotEmpty ? pad.layers.first : 'F.Cu';
-      final baseColor = const Color(0xFFC0C0C0);
-      final sideAlpha = _sideOpacity(padLayerName);
-      final paintAlpha = dimColor ? 0.2 * sideAlpha : sideAlpha;
-      final paint = Paint()
-        ..color = baseColor.withValues(alpha: paintAlpha.clamp(0.0, 1.0))
-        ..style = PaintingStyle.fill;
+      // Through-hole pads use wildcard layers ("*.Cu") and exist on
+      // every copper layer, so draw them on both F.Cu and B.Cu.
+      final isThruHole = pad.type == 'thru_hole' ||
+          pad.layers.any((l) => l.contains('*'));
 
-      final rect = Rect.fromCenter(
-        center: Offset(pad.x * 10, pad.y * 10) + offset,
-        width: pad.sizeX * 10,
-        height: pad.sizeY * 10,
-      );
+      void drawPad(double sideAlpha) {
+        final paintAlpha = dimColor ? 0.2 * sideAlpha : sideAlpha;
+        final paint = Paint()
+          ..color = const Color(0xFFC0C0C0)
+              .withValues(alpha: paintAlpha.clamp(0.0, 1.0))
+          ..style = PaintingStyle.fill;
+        final center = Offset(pad.x * 10, pad.y * 10) + offset;
+        final w = pad.sizeX * 10;
+        final h = pad.sizeY * 10;
+        if (pad.shape == 'circle') {
+          canvas.drawCircle(center, (w / 2).abs(), paint);
+        } else if (pad.shape == 'roundrect') {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromCenter(center: center, width: w, height: h),
+              const Radius.circular(2),
+            ),
+            paint,
+          );
+        } else {
+          canvas.drawRect(
+            Rect.fromCenter(center: center, width: w, height: h),
+            paint,
+          );
+        }
 
-      if (pad.shape == 'circle' || pad.shape == 'roundrect') {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(rect, const Radius.circular(2)),
-          paint,
-        );
-      } else {
-        canvas.drawRect(rect, paint);
+        // Draw drill hole
+        if (pad.drill != null && pad.drill! > 0) {
+          final holePaint = Paint()
+            ..color = const Color(0xFF1E1E2E)
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(center, (pad.drill! / 2) * 10, holePaint);
+        }
       }
 
-      // Draw drill hole
-      if (pad.drill != null && pad.drill! > 0) {
-        final holePaint = Paint()
-          ..color = const Color(0xFF1E1E2E)
-          ..style = PaintingStyle.fill;
-        canvas.drawCircle(
-          Offset(pad.x * 10, pad.y * 10) + offset,
-          (pad.drill! / 2) * 10,
-          holePaint,
-        );
+      if (isThruHole) {
+        drawPad(_sideOpacity('F.Cu'));
+        drawPad(_sideOpacity('B.Cu'));
+      } else {
+        drawPad(_sideOpacity(padLayerName));
       }
     }
 

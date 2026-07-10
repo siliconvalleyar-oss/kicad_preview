@@ -17,6 +17,7 @@ class AppToolbar extends StatelessWidget {
   final VoidCallback? onTogglePcbRefs;
   final VoidCallback? onTogglePcbSide;
   final VoidCallback? onTogglePcbFlipped;
+  final VoidCallback? onCenterPCB;
 
   const AppToolbar({
     super.key,
@@ -36,6 +37,7 @@ class AppToolbar extends StatelessWidget {
     this.onTogglePcbRefs,
     this.onTogglePcbSide,
     this.onTogglePcbFlipped,
+    this.onCenterPCB,
   });
 
   @override
@@ -108,28 +110,38 @@ class AppToolbar extends StatelessWidget {
             ),
           ],
           const Spacer(),
-          if (currentView == 'pcb' && !isPortrait) ...[
-            _ToggleButton(
-              icon: Icons.refresh,
-              label: 'Refs',
-              isActive: showPcbRefs,
-              onPressed: onTogglePcbRefs ?? () {},
-            ),
-            const SizedBox(width: 2),
+          if (currentView == 'pcb') ...[
+            if (!isPortrait) ...[
+              _ToggleButton(
+                icon: Icons.refresh,
+                label: 'Refs',
+                isActive: showPcbRefs,
+                onPressed: onTogglePcbRefs ?? () {},
+              ),
+              const SizedBox(width: 2),
+              _ToolbarButton(
+                icon: Icons.flip_to_front,
+                label: 'Side',
+                onPressed: onTogglePcbSide ?? () {},
+              ),
+              const SizedBox(width: 2),
+              _ToolbarButton(
+                icon: Icons.flip,
+                label: 'Flip',
+                onPressed: onTogglePcbFlipped ?? () {},
+              ),
+              const SizedBox(width: 2),
+            ],
             _ToolbarButton(
-              icon: Icons.flip_to_front,
-              label: 'Side',
-              onPressed: onTogglePcbSide ?? () {},
+              icon: Icons.center_focus_strong,
+              label: isPortrait ? '' : 'Center',
+              onPressed: onCenterPCB ?? () {},
             ),
-            const SizedBox(width: 2),
-            _ToolbarButton(
-              icon: Icons.flip,
-              label: 'Flip',
-              onPressed: onTogglePcbFlipped ?? () {},
-            ),
-            const SizedBox(width: 4),
-            _buildSeparator(),
-            const SizedBox(width: 4),
+            if (!isPortrait) ...[
+              const SizedBox(width: 4),
+              _buildSeparator(),
+              const SizedBox(width: 4),
+            ],
           ],
           // Panel toggles (icons only in portrait)
           if (isPortrait) ...[

@@ -1,3 +1,4 @@
+import 'dart:math';
 import '../models/pcb.dart';
 import '../models/pcb_element.dart';
 import 'sexpr_parser.dart';
@@ -83,9 +84,12 @@ class PCBParser {
           }
           final padSize = SExprParser.findFirst(pad, 'size');
           double sx = 1, sy = 1;
-          if (padSize != null && padSize.length >= 3) {
+          if (padSize != null && padSize.length >= 2) {
             sx = double.tryParse(padSize[1].toString()) ?? 1;
-            sy = double.tryParse(padSize[2].toString()) ?? 1;
+            // KiCad uses (size x y) for rectangular and (size d) for circular.
+            sy = padSize.length >= 3
+                ? double.tryParse(padSize[2].toString()) ?? sx
+                : sx;
           }
           final drill = double.tryParse(
               SExprParser.getStringValue(pad, 'drill') ?? '');
@@ -256,6 +260,58 @@ class PCBParser {
         net: net,
         uuid: uuid,
       ));
+    }
+
+    // Parse curved tracks (KiCad v7+ uses 'arc' for rounded corners)
+    for (final arc in SExprParser.findAll(root, 'arc')) {
+      final start = SExprParser.findFirst(arc, 'start');
+      final mid = SExprParser.findFirst(arc, 'mid');
+      final end = SExprParser.findFirst(arc, 'end');
+      if (start == null || mid == null || end == null) continue;
+      if (start.length < 3 || mid.length < 3 || end.length < 3) continue;
+      final sx = double.tryParse(start[1].toString()) ?? 0;
+      final sy = double.tryParse(start[2].toString()) ?? 0;
+      final mx = double.tryParse(mid[1].toString()) ?? 0;
+      final my = double.tryParse(mid[2].toString()) ?? 0;
+      final ex = double.tryParse(end[1].toString()) ?? 0;
+      final ey = double.tryParse(end[2].toString()) ?? 0;
+      final arcLayer = SExprParser.getStringValue(arc, 'layer') ?? 'F.Cu';
+      final arcWidth = double.tryParse(
+              SExprParser.getStringValue(arc, 'width') ?? '0.25') ??
+          0.25;
+      final net = SExprParser.getStringValue(arc, 'net');
+      final uuid = SExprParser.getStringValue(arc, 'uuid') ??
+          SExprParser.getStringValue(arc, 'tstamp');
+
+      // Approximate the arc with a quadratic Bezier through S, M, E.
+      // Control point chosen so the curve passes through M at t=0.5:
+      //   B = 2*M - (S+E)/2
+      // This stays within the convex hull of the 3 points, so it is
+      // numerically stable even for nearly-straight (huge-radius) arcs.
+      final bx = 2 * mx - (sx + ex) / 2;
+      final by = 2 * my - (sy + ey) / 2;
+
+      // Sample count based on chord length and curvature (sagitta).
+      final chord = sqrt(pow(ex - sx, 2) + pow(ey - sy, 2));
+      final sagitta = sqrt(pow(mx - (sx + ex) / 2, 2) + pow(my - (sy + ey) / 2, 2));
+      final steps = max(2, ((chord + 4 * sagitta) / 3).ceil());
+
+      double prevX = sx, prevY = sy;
+      for (int i = 1; i <= steps; i++) {
+        final t = i / steps;
+        final mt = 1 - t;
+        final nx = mt * mt * sx + 2 * mt * t * bx + t * t * ex;
+        final ny = mt * mt * sy + 2 * mt * t * by + t * t * ey;
+        tracks.add(PCBTrack(
+          x1: prevX, y1: prevY, x2: nx, y2: ny,
+          width: arcWidth,
+          layer: arcLayer,
+          net: net,
+          uuid: uuid,
+        ));
+        prevX = nx;
+        prevY = ny;
+      }
     }
 
     // Parse vias
